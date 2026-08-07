@@ -301,12 +301,39 @@
   .role-1 .role-tag { color: #ffc27a; }
   .role-2 .role-tag { color: #f0a8d8; }
 
-  .star {
-    position: absolute; top: 2px; left: 2px;
-    font-size: 8px; font-weight: 800; line-height: 1;
-    padding: 2px 3px; border-radius: 5px;
-    background: rgba(6,16,40,0.8); color: var(--gold);
+  .chaos-box {
+    margin-top: 9px; padding: 8px 9px;
+    background: rgba(6,16,40,0.45);
+    border: 1px solid rgba(120,170,240,0.28); border-radius: 10px;
   }
+  .chaos-cap {
+    font-size: 9px; font-weight: 800; letter-spacing: 0.1em;
+    color: var(--ink-dim); margin-bottom: 6px;
+    display: flex; align-items: baseline; gap: 7px;
+  }
+  .chaos-cap span { font-weight: 500; letter-spacing: 0; font-size: 9px; opacity: 0.75; }
+  .chaos-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chaos-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 7px; border-radius: 7px;
+    font-size: 10px; font-weight: 700;
+    border: 1px solid transparent;
+  }
+  .chaos-chip b { font-weight: 700; }
+  .chaos-chip i {
+    font-style: normal; font-weight: 800; font-size: 9.5px;
+    padding: 0 4px; border-radius: 4px; background: rgba(0,0,0,0.32);
+  }
+  /* 段階の色。カードのレアリティ配色に合わせる */
+  .chaos-chip.lv1 { background: rgba(74,157,255,0.2);  border-color: rgba(74,157,255,0.55);  color: #9dc9ff; }
+  .chaos-chip.lv2 { background: rgba(255,159,61,0.2);  border-color: rgba(255,159,61,0.55);  color: #ffc48a; }
+  .chaos-chip.lv3 { background: rgba(176,76,255,0.2);  border-color: rgba(176,76,255,0.55);  color: #d79bff; }
+  /* 後から同じ対象を取って上書きされたもの */
+  .chaos-chip.dead {
+    opacity: 0.4; text-decoration: line-through;
+    text-decoration-thickness: 1px;
+  }
+
   .deck-empty { font-size: 10.5px; color: var(--ink-dim); padding: 6px 0; }
 
   .support-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
@@ -427,23 +454,30 @@ const SLOT_ROLES = ["進化", "ヒーロー", "ワイルド"];
 // 進化を置けるのは1枠目とワイルドの3枠目
 const EVO_SLOTS = [0, 2];
 
-// ---- スターレベル ----
-// 試合データの modifiers に "Wizard3" のような形で入っている
-// (カード名＋スターレベル)。プレイヤーごとに分かれているので tag で拾う。
+// ---- カオスリーグの特殊能力 ----
+// 試合データの modifiers に "Wizard3" のような形で入っている(対象＋段階)。
+// 同じ対象を複数回取ると後のものが有効になるが、取った順番も見たいので
+// 上書きされた分も「効果なし」として残す。
 const normName = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-function starsOf(battle, tag) {
-  const out = {};
+function chaosList(battle, tag) {
+  const raws = [];
   for (const entry of battle?.modifiers || []) {
     if (clean(entry.tag) !== clean(tag)) continue;
     for (const raw of entry.modifiers || []) {
       const m = String(raw).match(/^(.*?)(\d+)$/);
-      // 同じカードが2回出てくることがあるので最初のものを採用する
-      if (m && out[normName(m[1])] === undefined) out[normName(m[1])] = Number(m[2]);
+      if (m) raws.push({ name: m[1], key: normName(m[1]), level: Number(m[2]) });
     }
   }
-  return out;
+  // 同じ対象で後から取ったものがあれば、前のものは上書きされている
+  return raws.map((item, i) => ({
+    ...item,
+    overwritten: raws.some((other, j) => j > i && other.key === item.key),
+  }));
 }
+
+// 段階ごとの色 (カードのレアリティ配色に合わせる)
+const CHAOS_COLORS = { 1: "lv1", 2: "lv2", 3: "lv3" };
 
 let index = null, metricId = "rank", view = "board";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
@@ -651,26 +685,35 @@ function spark(points) {
 
 // ---- デッキ ----
 function cardSlot(c, opts = {}) {
-  const { evo = false, star, role, roleIndex } = opts;
+  const { evo = false, role, roleIndex } = opts;
   const url = (evo && c.iconUrls?.evolutionMedium) || c.iconUrls?.medium || "";
   const lv = cardLevel(c);
   const maxed = lv === MAX_LEVEL;
   const roleCls = role ? ` role role-${roleIndex}` : "";
   return `<div class="card-slot${evo ? " evo" : ""}${roleCls}">
     ${url ? `<img src="${esc(url)}" alt="${esc(c.name || "")}" loading="lazy">` : ""}
-    ${star ? `<span class="star">★${star}</span>` : ""}
     ${role ? `<span class="role-tag">${esc(role)}</span>` : ""}
     ${lv != null ? `<span class="card-lv${maxed ? " max" : ""}">${maxed ? "MAX" : "Lv" + lv}</span>` : ""}
   </div>`;
 }
 
-function deckHtml(player, who, stars) {
+function chaosBox(entries) {
+  if (!entries || !entries.length) return "";
+  const chips = entries.map(e =>
+    `<span class="chaos-chip ${CHAOS_COLORS[e.level] || ""}${e.overwritten ? " dead" : ""}">
+      <b>${esc(e.name)}</b><i>${e.level}</i>
+    </span>`).join("");
+  return `<div class="chaos-box">
+    <div class="chaos-cap">CHAOS MODIFIER<span>取った順</span></div>
+    <div class="chaos-chips">${chips}</div>
+  </div>`;
+}
+
+function deckHtml(player, who, chaos) {
   const cards = player?.cards || [];
   // タワーユニットとヒーローは cards ではなく supportCards に入る
   const support = player?.supportCards || [];
   if (!cards.length && !support.length) return `<div class="deck-empty">デッキ情報なし</div>`;
-
-  const star = (c) => (stars || {})[normName(c.name)];
 
   const costs = cards.map(c => c.elixirCost).filter(v => typeof v === "number");
   const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length).toFixed(1) : null;
@@ -678,12 +721,11 @@ function deckHtml(player, who, stars) {
   // 進化が乗るのは1枠目とワイルドの3枠目だけ。データに進化の印がある時のみ光らせる
   const slots = cards.map((c, i) => cardSlot(c, {
     evo: EVO_SLOTS.includes(i) && c.evolutionLevel != null,
-    star: star(c),
     role: SLOT_ROLES[i],
     roleIndex: i,
   })).join("");
 
-  const supportSlots = support.map(c => cardSlot(c, { star: star(c) })).join("");
+  const supportSlots = support.map(c => cardSlot(c, {})).join("");
 
   return `
     <div class="deck-head">
@@ -694,7 +736,8 @@ function deckHtml(player, who, stars) {
     ${support.length ? `<div class="support-row">
       <span class="support-cap">タワー</span>
       <div class="support-grid">${supportSlots}</div>
-    </div>` : ""}`;
+    </div>` : ""}
+    ${chaosBox(chaos)}`;
 }
 
 // ---- 選手ページ ----
@@ -745,8 +788,8 @@ function drawPlayer() {
         <span class="chevron">▼</span>
       </button>
       ${isOpen ? `<div class="decks">
-        <div class="deck-side">${deckHtml(me, "me", starsOf(b, me.tag || selectedTag))}</div>
-        <div class="deck-side">${deckHtml(opp, "opp", starsOf(b, opp.tag))}</div>
+        <div class="deck-side">${deckHtml(me, "me", chaosList(b, me.tag || selectedTag))}</div>
+        <div class="deck-side">${deckHtml(opp, "opp", chaosList(b, opp.tag))}</div>
       </div>` : ""}
     </div>`;
   }).join("");
