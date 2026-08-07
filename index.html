@@ -363,6 +363,27 @@ const REPO = "gabcat-fugyu/CR2";
 const BRANCH = "main";
 const DATA = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/data`;
 
+// raw.githubusercontent.com は最大5分ほどキャッシュを返すため、
+// 更新ボタンを押しても古い内容が出ることがある。
+// GitHubのAPI経由ならキャッシュを挟まないので、まずそちらを試す。
+// APIには1時間60回の制限(閲覧者ごと)があるので、ダメならraw配信に切り替える。
+const API = `https://api.github.com/repos/${REPO}/contents/data`;
+
+async function loadData(path) {
+  try {
+    const res = await fetch(`${API}/${path}?ref=${BRANCH}&t=${Date.now()}`, {
+      cache: "no-store",
+      headers: { Accept: "application/vnd.github.raw" },
+    });
+    if (res.ok) return await res.json();
+  } catch {
+    // 通信できなければ下のraw配信にまわす
+  }
+  const res = await fetch(bust(`${DATA}/${path}`), { cache: "no-store" });
+  if (!res.ok) throw new Error(String(res.status));
+  return await res.json();
+}
+
 // ---- リーグ ----
 // leagueNumber 1〜3 がマスターI〜III、4〜6 が神々の挑戦I〜III、7 が天界。
 const LEAGUES = {
@@ -541,9 +562,7 @@ function rateLine(d) {
 async function loadBoard() {
   $refresh.classList.add("busy");
   try {
-    const res = await fetch(bust(`${DATA}/index.json`), { cache: "no-store" });
-    if (!res.ok) throw new Error(res.status);
-    index = await res.json();
+    index = await loadData("index.json");
     draw();
   } catch {
     $tabs.hidden = true;
@@ -560,8 +579,8 @@ async function openPlayer(tag) {
   history = []; trophyLog = []; opened.clear();
   draw();
   const [h, t] = await Promise.all([
-    fetch(bust(`${DATA}/${tag}/history.json`), { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
-    fetch(bust(`${DATA}/${tag}/trophies.json`), { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
+    loadData(`${tag}/history.json`).catch(() => []),
+    loadData(`${tag}/trophies.json`).catch(() => []),
   ]);
   if (selectedTag !== tag) return;
   history = Array.isArray(h) ? h : [];
