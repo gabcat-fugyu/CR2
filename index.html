@@ -268,7 +268,11 @@
   .card-lv {
     position: absolute; left: 0; right: 0; bottom: 0;
     font-size: 8.5px; font-weight: 800; text-align: center; padding: 1px 0;
-    background: rgba(6,16,40,0.82); color: var(--gold-lite);
+    background: rgba(6,16,40,0.82); color: var(--ink-dim);
+  }
+  .card-lv.max {
+    background: linear-gradient(180deg, var(--gold), #d99a00);
+    color: #3d2600; letter-spacing: 0.04em;
   }
   .card-slot.evo { box-shadow: 0 0 0 2px #b04cff inset; }
   .deck-empty { font-size: 10.5px; color: var(--ink-dim); padding: 6px 0; }
@@ -343,6 +347,22 @@ const LEAGUE_FILES = {
 const LEAGUE_IMG = (n) => `./assets/leagues/${LEAGUE_FILES[n]}`;
 
 const PAGE = 20;
+
+// ---- カードのレベル ----
+// APIが返す level はレアリティ内での相対値(ノーマルもチャンピオンも1始まり)。
+// 実際の表示レベルは開始レベルぶんだけ上にずれる。
+//   ノーマル1〜 / レア3〜 / スーパーレア6〜 / ウルトラレア9〜 / チャンピオン11〜
+// これは maxLevel から逆算できる (カンストは全レアリティ共通で16)。
+//   例: レアは maxLevel=14 なので +2 して 3〜16 になる
+const MAX_LEVEL = 16;
+function cardLevel(c) {
+  if (typeof c.level !== "number") return null;
+  const max = typeof c.maxLevel === "number" ? c.maxLevel : MAX_LEVEL;
+  return Math.min(MAX_LEVEL, c.level + (MAX_LEVEL - max));
+}
+
+// 進化・ヒーローを置けるのはデッキ左上の3枠まで
+const SPECIAL_SLOTS = 3;
 
 let index = null, metricId = "rank", view = "board";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
@@ -556,15 +576,19 @@ function deckHtml(player, who) {
   if (!cards.length) return `<div class="deck-empty">デッキ情報なし</div>`;
   const costs = cards.map(c => c.elixirCost).filter(v => typeof v === "number");
   const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length).toFixed(1) : null;
-  const slots = cards.map(c => {
-    const url = c.iconUrls?.evolutionMedium || c.iconUrls?.medium || "";
-    const evo = c.iconUrls?.evolutionMedium ? " evo" : "";
-    const lv = c.level != null ? `Lv${c.level}` : "";
-    return `<div class="card-slot${evo}">
+
+  const slots = cards.map((c, i) => {
+    // 進化が乗るのは左上3枠だけ。データ側に進化の印がある時のみ光らせる
+    const evo = i < SPECIAL_SLOTS && c.evolutionLevel != null;
+    const url = (evo && c.iconUrls?.evolutionMedium) || c.iconUrls?.medium || "";
+    const lv = cardLevel(c);
+    const maxed = lv === MAX_LEVEL;
+    return `<div class="card-slot${evo ? " evo" : ""}">
       ${url ? `<img src="${esc(url)}" alt="${esc(c.name || "")}" loading="lazy">` : ""}
-      ${lv ? `<span class="card-lv">${esc(lv)}</span>` : ""}
+      ${lv != null ? `<span class="card-lv${maxed ? " max" : ""}">${maxed ? "MAX" : "Lv" + lv}</span>` : ""}
     </div>`;
   }).join("");
+
   return `
     <div class="deck-head">
       <span class="deck-who ${who}">${who === "me" ? "自分" : esc(player.name || "相手")}</span>

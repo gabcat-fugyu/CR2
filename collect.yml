@@ -2,8 +2,8 @@ name: クラロワ戦績を収集
 
 on:
   schedule:
-    # 15分おき (UTC基準。GitHubの無料枠では混雑時に遅延することがある)
-    - cron: "*/15 * * * *"
+    # 5分おき (UTC基準。GitHubの無料枠では混雑時に遅延することがある)
+    - cron: "*/5 * * * *"
   workflow_dispatch: # 手動実行用のボタンを出す
   push:
     paths:
