@@ -1,0 +1,50 @@
+name: サイトを公開
+
+# サイトの見た目に関わるファイルを変えた時だけ動かす。
+# data/ の更新(5分おき)ではデプロイしないので、
+# 無駄な再デプロイとキュー詰まりが起きない。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "assets/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: # 手動で公開し直したい時用
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 公開は1本ずつ。走っている途中の古いものは打ち切る
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 公開するファイルだけ集める
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          # 画像などがあれば一緒に持っていく
+          if [ -d assets ]; then cp -r assets dist/; fi
+          echo "--- 公開内容 ---"
+          find dist -type f | sort
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

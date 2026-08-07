@@ -2,15 +2,18 @@ name: クラロワ戦績を収集
 
 on:
   schedule:
-    - cron: "*/15 * * * *"
-  workflow_dispatch:
+    # 5分おき (UTC基準。GitHubの無料枠では混雑時に遅延することがある)
+    - cron: "*/5 * * * *"
+  workflow_dispatch: # 手動実行用のボタンを出す
   push:
     paths:
-      - "players.json"
+      - "players.json" # 追跡する人を変えたら即座に反映する
 
+# リポジトリへの書き込みを許可する (収集結果をcommitするため)
 permissions:
   contents: write
 
+# 前回の実行が終わる前に次が始まらないようにする
 concurrency:
   group: collect
   cancel-in-progress: false
@@ -20,18 +23,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
       - name: 戦績を取得
         env:
           CR_API_TOKEN: ${{ secrets.CR_API_TOKEN }}
         run: python collect.py
+
       - name: 変更があればcommit
         run: |
           git config user.name "cr-collector"
           git config user.email "actions@github.com"
           git add data/
+          # 差分が無い場合は commit せずに正常終了させる
           if git diff --staged --quiet; then
             echo "更新なし"
           else
