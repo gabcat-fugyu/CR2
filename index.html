@@ -37,6 +37,11 @@
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+  /* スマホでの二度タップ拡大を無効にする。
+     ピンチでの拡大は残るので、見づらい時は指2本で広げられる。
+     タップ後の300ms待ちも消えるので、ボタンの反応も速くなる。 */
+  html { touch-action: manipulation; }
+
   body {
     margin: 0;
     min-height: 100vh;
