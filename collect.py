@@ -31,6 +31,14 @@ API_BASE = "https://proxy.royaleapi.dev/v1"
 # 「今日」の判定は日本時間で行う
 JST = timezone(timedelta(hours=9))
 
+# ---- データの保持期間 ----
+# 放っておくと際限なく増えるので、古い分は間引く。
+# 環境変数で上書きできるようにしておく。
+KEEP_BATTLE_DAYS = int(os.environ.get("KEEP_BATTLE_DAYS", "180"))   # 対戦履歴を残す日数
+MAX_BATTLES = int(os.environ.get("MAX_BATTLES", "3000"))            # 1人あたりの上限試合数
+FULL_TROPHY_DAYS = int(os.environ.get("FULL_TROPHY_DAYS", "30"))    # レート推移を全点残す日数
+KEEP_TROPHY_DAYS = int(os.environ.get("KEEP_TROPHY_DAYS", "365"))   # それ以前は1日1点にして残す日数
+
 ROOT = Path(__file__).parent
 PLAYERS_FILE = ROOT / "players.json"
 DATA_DIR = ROOT / "data"
@@ -203,6 +211,59 @@ def period_stats(history, tag: str):
     return stats
 
 
+def prune_battles(battles, now):
+    """古すぎる試合と、上限を超えた分を落とす。battlesは新しい順。"""
+    cutoff = now - timedelta(days=KEEP_BATTLE_DAYS)
+    kept = []
+    for b in battles:
+        when = parse_battle_time(b.get("battleTime", ""))
+        # 時刻が読めないものは判断できないので残す
+        if when is None or when >= cutoff:
+            kept.append(b)
+    return kept[:MAX_BATTLES]
+
+
+def compact_trophies(points, now):
+    """レート推移を間引く。
+
+    直近 FULL_TROPHY_DAYS は全部残す。それより古いものは1日1点だけ
+    (その日の最後の記録) に減らし、KEEP_TROPHY_DAYS より古いものは捨てる。
+    """
+    full_from = now - timedelta(days=FULL_TROPHY_DAYS)
+    keep_from = now - timedelta(days=KEEP_TROPHY_DAYS)
+
+    recent = []
+    per_day = {}  # 日付 -> その日の最後の1点
+
+    for p in points:
+        try:
+            when = datetime.fromisoformat(p["time"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+
+        if when >= full_from:
+            recent.append((when, p))
+        elif when >= keep_from:
+            day = when.astimezone(JST).date()
+            prev = per_day.get(day)
+            if prev is None or when >= prev[0]:
+                per_day[day] = (when, p)
+
+    merged = list(per_day.values()) + recent
+    merged.sort(key=lambda x: x[0])
+    return [p for _, p in merged]
+
+
+def same_snapshot(a, b):
+    """レート推移の記録が前回と同じ中身かどうか。"""
+    if not a or not b:
+        return False
+    keys = ("trophies", "rating", "leagueNumber", "battleCount", "wins", "losses")
+    return all(a.get(k) == b.get(k) for k in keys)
+
+
 def collect_player(tag: str, label, token: str):
     """1人分を取得して保存する。結果のサマリを返す。"""
     encoded = f"%23{tag}"
@@ -226,25 +287,31 @@ def collect_player(tag: str, label, token: str):
 
     now = datetime.now(timezone.utc)
 
+    before = len(merged)
+    merged = prune_battles(merged, now)
+    dropped = before - len(merged)
+
     # --- パス・オブ・レジェンド (天界) の情報 ---
     # シーズン中はここにレートとリーグ番号が入る。オフシーズンだと空のことがある。
     pol = player.get("currentPathOfLegendSeasonResult") or {}
     best_pol = player.get("bestPathOfLegendSeasonResult") or {}
     last_pol = player.get("lastPathOfLegendSeasonResult") or {}
 
-    # --- トロフィー/レート推移の記録 (1実行につき1点) ---
+    # --- トロフィー/レート推移の記録 ---
+    # 5分おきに走るので、中身が前回と同じなら記録しない(無駄に増やさない)
     trophies = load_json(player_dir / "trophies.json", [])
-    trophies.append(
-        {
-            "time": now.isoformat(timespec="seconds"),
-            "trophies": player.get("trophies"),
-            "rating": pol.get("trophies"),
-            "leagueNumber": pol.get("leagueNumber"),
-            "battleCount": player.get("battleCount"),
-            "wins": player.get("wins"),
-            "losses": player.get("losses"),
-        }
-    )
+    snapshot = {
+        "time": now.isoformat(timespec="seconds"),
+        "trophies": player.get("trophies"),
+        "rating": pol.get("trophies"),
+        "leagueNumber": pol.get("leagueNumber"),
+        "battleCount": player.get("battleCount"),
+        "wins": player.get("wins"),
+        "losses": player.get("losses"),
+    }
+    if not same_snapshot(trophies[-1] if trophies else None, snapshot):
+        trophies.append(snapshot)
+    trophies = compact_trophies(trophies, now)
 
     summary = {
         "updatedAt": now.isoformat(timespec="seconds"),
@@ -277,8 +344,9 @@ def collect_player(tag: str, label, token: str):
     save_json(player_dir / "player.json", summary)
 
     rating_text = summary["rating"] if summary["rating"] is not None else "レート無し"
+    trimmed = f" / 古い試合を{dropped}件整理" if dropped else ""
     print(
-        f"  {summary['label']}: {rating_text} / 新規 {len(additions)} / 累計 {len(merged)} 試合"
+        f"  {summary['label']}: {rating_text} / 新規 {len(additions)} / 累計 {len(merged)} 試合{trimmed}"
     )
     return summary
 
