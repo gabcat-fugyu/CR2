@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e0a1c">
+<meta name="theme-color" content="#07173a">
 <title>Clash Battle Log</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -12,229 +12,325 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet">
 
 <style>
   :root {
-    --bg: #0e0a1c;
-    --panel: #1a1330;
-    --panel2: #241a44;
-    --gold: #ffc93c;
-    --violet: #8a6bff;
-    --teal: #35d0ba;
-    --rose: #ff5c7a;
-    --text: #ede9f7;
-    --muted: #8a81a8;
+    /* アリーナの配色 */
+    --arena-deep: #07173a;
+    --arena-mid:  #12306e;
+    --arena-lite: #1c4699;
+    --panel-edge: #3a6fd8;
+
+    --gold:       #ffd23f;
+    --gold-deep:  #b8790a;
+    --gold-lite:  #ffe89a;
+
+    --blue-side:  #4a9dff;   /* 自分 */
+    --red-side:   #ff5a5a;   /* 相手 */
+    --elixir:     #d24ce0;
+
+    --ink:        #ffffff;
+    --ink-dim:    #a9c0ea;
+    --shadow:     rgba(3, 10, 28, 0.55);
   }
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
   body {
     margin: 0;
     min-height: 100vh;
-    background: radial-gradient(circle at 50% -10%, #2b1f52 0%, transparent 55%), var(--bg);
-    color: var(--text);
-    font-family: 'Inter', system-ui, sans-serif;
-  }
-  .wrap { max-width: 520px; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 14px 80px; }
-
-  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; gap: 10px; }
-  .top-title {
-    font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 15px;
-    letter-spacing: 0.12em; color: var(--muted); text-transform: uppercase;
-  }
-  .back-btn {
-    background: var(--panel); border: 1px solid rgba(255,255,255,0.08); color: var(--text);
-    border-radius: 10px; padding: 7px 13px; font-size: 12px; font-family: inherit; cursor: pointer;
-  }
-  .back-btn:active { opacity: 0.7; }
-
-  /* ---- ランキング切替タブ ---- */
-  .metric-tabs { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 3px; }
-  .metric-tabs::-webkit-scrollbar { display: none; }
-  .metric-tab {
-    flex: 0 0 auto; background: var(--panel); border: 1px solid rgba(255,255,255,0.07);
-    color: var(--muted); border-radius: 999px; padding: 7px 14px; font-size: 12px;
-    font-family: inherit; cursor: pointer; white-space: nowrap;
-  }
-  .metric-tab.active { background: var(--violet); border-color: var(--violet); color: #fff; font-weight: 600; }
-
-  /* ---- ランキング行 ---- */
-  .rank-row {
-    display: flex; align-items: center; gap: 11px;
-    background: var(--panel); border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 12px; padding: 10px 13px; margin-bottom: 7px;
-    cursor: pointer; width: 100%; text-align: left; font-family: inherit; color: inherit;
-  }
-  .rank-row:active { background: var(--panel2); }
-  .rank-row.top1 { border-color: rgba(255,201,60,0.5); box-shadow: 0 0 24px -8px rgba(255,201,60,0.4); }
-  .rank-row.top2 { border-color: rgba(200,200,220,0.32); }
-  .rank-row.top3 { border-color: rgba(205,127,50,0.38); }
-
-  .rank-pos {
-    font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 17px;
-    width: 26px; flex-shrink: 0; text-align: center; color: var(--muted);
-  }
-  .top1 .rank-pos { color: var(--gold); }
-  .top2 .rank-pos { color: #d8d8e6; }
-  .top3 .rank-pos { color: #cd7f32; }
-
-  .rank-badge {
-    width: 34px; height: 34px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .rank-badge img { width: 100%; height: 100%; object-fit: contain; }
-  /* 画像が無いときのフォールバック */
-  .badge-fallback {
-    width: 30px; height: 30px; border-radius: 8px;
-    background: linear-gradient(150deg, var(--panel2), #3a2a6b);
-    border: 1px solid rgba(255,255,255,0.12);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Chakra Petch', sans-serif; font-size: 10px; font-weight: 700; color: var(--gold);
+    color: var(--ink);
+    font-family: 'M PLUS Rounded 1c', system-ui, sans-serif;
+    font-weight: 500;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -5%, #2b5fbf 0%, transparent 60%),
+      repeating-linear-gradient(115deg,
+        rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 2px,
+        transparent 2px, transparent 16px),
+      linear-gradient(180deg, #0d2352 0%, var(--arena-deep) 55%);
+    background-attachment: fixed;
   }
 
-  .rank-body { flex: 1; min-width: 0; }
-  .rank-name {
-    font-size: 13.5px; font-weight: 600; overflow: hidden;
+  .wrap { max-width: 540px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) 12px 90px; }
+
+  /* ---- 見出し ---- */
+  .display { font-family: 'Mochiy Pop One', sans-serif; font-weight: 400; }
+  .outlined {
+    color: var(--ink);
+    text-shadow:
+      -1.5px -1.5px 0 #08183c, 1.5px -1.5px 0 #08183c,
+      -1.5px  1.5px 0 #08183c, 1.5px  1.5px 0 #08183c,
+       0 3px 0 rgba(4,12,32,0.5);
+  }
+
+  .masthead {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 14px;
+  }
+  .crest {
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 17px; letter-spacing: 0.02em;
+    background: linear-gradient(180deg, var(--gold-lite), var(--gold) 45%, var(--gold-deep));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 2px 0 rgba(4,12,32,0.6));
+  }
+
+  /* ---- クラロワ風ボタン(下に厚みのある立体) ---- */
+  .cr-btn {
+    font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 800; font-size: 12px;
+    color: var(--ink); cursor: pointer;
+    background: linear-gradient(180deg, var(--arena-lite), var(--arena-mid));
+    border: 2px solid var(--panel-edge);
+    border-bottom-width: 4px; border-radius: 11px;
+    padding: 7px 14px; white-space: nowrap;
+    text-shadow: 0 1.5px 0 rgba(4,12,32,0.6);
+    transition: transform 0.06s, border-bottom-width 0.06s;
+  }
+  .cr-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+  .cr-btn.on {
+    background: linear-gradient(180deg, var(--gold-lite), var(--gold) 50%, #e6a400);
+    border-color: var(--gold-deep); color: #3d2600;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+  .cr-btn:focus-visible { outline: 3px solid var(--gold-lite); outline-offset: 2px; }
+
+  .tab-rail { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 16px; padding: 2px 0 5px; }
+  .tab-rail::-webkit-scrollbar { display: none; }
+  .tab-rail .cr-btn { flex: 0 0 auto; }
+
+  /* ---- 順位プレート ---- */
+  .plate {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    background: linear-gradient(180deg, rgba(35,79,163,0.92), rgba(16,44,102,0.92));
+    border: 2px solid rgba(96,150,235,0.5); border-bottom-width: 4px;
+    border-radius: 14px; padding: 9px 12px 9px 8px; margin-bottom: 8px;
+    cursor: pointer; text-align: left; color: inherit;
+    font-family: inherit;
+    transition: transform 0.06s;
+  }
+  .plate:active { transform: translateY(2px); }
+  .plate.gold   { border-color: var(--gold); box-shadow: 0 0 22px -6px rgba(255,210,63,0.55); }
+  .plate.silver { border-color: #cdd8ec; }
+  .plate.bronze { border-color: #d08a4a; }
+
+  .medal {
+    width: 30px; height: 30px; flex-shrink: 0; border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 14px;
+    background: linear-gradient(180deg, #2a5cb8, #16336e);
+    border: 2px solid rgba(120,170,240,0.45); color: var(--ink-dim);
+  }
+  .gold .medal   { background: linear-gradient(180deg, var(--gold-lite), #e0a300); border-color: #8a5c00; color: #4a2f00; }
+  .silver .medal { background: linear-gradient(180deg, #ffffff, #b9c6dc); border-color: #8593ad; color: #33405a; }
+  .bronze .medal { background: linear-gradient(180deg, #f0b183, #b96a2c); border-color: #7d4413; color: #40200a; }
+
+  .shield { width: 38px; height: 38px; flex-shrink: 0; display: grid; place-items: center; }
+  .shield img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px var(--shadow)); }
+  .shield-none {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: linear-gradient(180deg, #2c5aa8, #16336e);
+    border: 2px solid rgba(120,170,240,0.4);
+    display: grid; place-items: center; font-size: 11px; color: var(--ink-dim);
+  }
+
+  .plate-body { flex: 1; min-width: 0; }
+  .plate-name {
+    font-weight: 800; font-size: 14px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap;
+    text-shadow: 0 1.5px 0 rgba(4,12,32,0.55);
   }
-  .rank-sub { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+  .plate-sub { font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
 
-  .rank-value {
-    font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 19px;
-    color: var(--gold); flex-shrink: 0; text-align: right;
+  .plate-value {
+    flex-shrink: 0; text-align: right;
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 20px; color: var(--gold);
+    text-shadow: 0 2px 0 rgba(4,12,32,0.55);
   }
-  .rank-value.dim { color: var(--muted); font-size: 13px; }
-  .rank-value small { font-size: 11px; font-weight: 400; }
+  .plate-value.text { font-size: 12px; color: var(--gold-lite); max-width: 92px; line-height: 1.3; }
+  .plate-value.none { color: #6d84ad; font-size: 13px; }
+  .plate-value u { text-decoration: none; font-size: 11px; }
 
-  /* ---- 詳細ページ ---- */
-  .crystal-wrap { position: relative; padding: 28px 20px 22px; margin-bottom: 16px; text-align: center; }
-  .crystal-shape {
-    position: absolute; inset: 0;
-    background: linear-gradient(160deg, var(--panel2), var(--panel));
-    clip-path: polygon(50% 0%, 95% 22%, 100% 78%, 50% 100%, 0% 78%, 5% 22%);
-    box-shadow: 0 0 60px -10px rgba(138,107,255,0.45);
-    border: 1px solid rgba(255,201,60,0.18);
+  /* ---- 選手バナー ---- */
+  .banner {
+    position: relative; text-align: center; padding: 20px 16px 18px; margin-bottom: 14px;
+    background: linear-gradient(180deg, rgba(44,94,190,0.95), rgba(13,40,96,0.95));
+    border: 3px solid var(--gold-deep); border-radius: 18px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.18), 0 6px 0 rgba(4,12,32,0.35);
   }
-  .crystal-content { position: relative; }
-  .player-name { font-family: 'Chakra Petch', sans-serif; font-weight: 600; font-size: 15px; margin-bottom: 2px; }
-  .player-clan { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
-  .detail-badge { width: 54px; height: 54px; margin: 0 auto 6px; }
-  .detail-badge img { width: 100%; height: 100%; object-fit: contain; }
-  .rating-num {
-    font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 50px; line-height: 1;
-    color: var(--gold); text-shadow: 0 0 28px rgba(255,201,60,0.4);
+  .banner::before {
+    content: ""; position: absolute; inset: 5px; border-radius: 13px;
+    border: 1px solid rgba(255,226,140,0.28); pointer-events: none;
   }
-  .rating-label { font-size: 10.5px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
-  .rating-sub { font-size: 11px; color: var(--muted); margin-top: 7px; }
+  .banner-name { font-family: 'Mochiy Pop One', sans-serif; font-size: 16px; }
+  .banner-clan { font-size: 11px; color: var(--ink-dim); margin-top: 3px; }
+  .banner-shield { width: 76px; height: 76px; margin: 10px auto 4px; }
+  .banner-shield img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 6px var(--shadow)); }
+  .banner-league { font-family: 'Mochiy Pop One', sans-serif; font-size: 13px; color: var(--gold-lite); }
 
-  .stat-strip { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 2px; }
-  .stat-strip::-webkit-scrollbar { display: none; }
-  .stat-chip {
-    flex: 1 0 auto; background: var(--panel); border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px; padding: 10px 12px; min-width: 80px;
+  .plaque {
+    display: inline-flex; align-items: baseline; gap: 7px; margin-top: 9px;
+    padding: 6px 18px; border-radius: 999px;
+    background: linear-gradient(180deg, #10285c, #061733);
+    border: 2px solid var(--gold-deep);
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
   }
-  .stat-chip-value { font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 18px; display: block; }
-  .stat-chip-label { font-size: 10px; color: var(--muted); }
+  .plaque-label { font-size: 10px; color: var(--ink-dim); letter-spacing: 0.08em; }
+  .plaque-num { font-family: 'Mochiy Pop One', sans-serif; font-size: 30px; color: var(--gold); line-height: 1; }
+  .banner-foot { font-size: 10.5px; color: var(--ink-dim); margin-top: 8px; }
 
-  .chart-card {
-    background: var(--panel); border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 12px; padding: 14px 12px 10px; margin: 12px 0 16px;
+  /* ---- 数値タイル ---- */
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-bottom: 8px; }
+  .tile {
+    background: linear-gradient(180deg, rgba(30,70,150,0.85), rgba(12,34,80,0.85));
+    border: 2px solid rgba(96,150,235,0.35); border-bottom-width: 3px;
+    border-radius: 11px; padding: 8px 6px; text-align: center;
   }
-  .chart-head {
-    font-size: 10.5px; color: var(--muted); margin-bottom: 10px;
-    letter-spacing: 0.06em; text-transform: uppercase; font-family: 'Chakra Petch', sans-serif;
-    display: flex; justify-content: space-between;
+  .tile-num { font-family: 'Mochiy Pop One', sans-serif; font-size: 17px; line-height: 1.1; }
+  .tile-num u { text-decoration: none; font-size: 10px; opacity: 0.8; }
+  .tile-cap { font-size: 9.5px; color: var(--ink-dim); margin-top: 2px; }
+
+  /* ---- 推移グラフ ---- */
+  .graph {
+    background: linear-gradient(180deg, rgba(20,50,115,0.85), rgba(9,26,62,0.85));
+    border: 2px solid rgba(96,150,235,0.3); border-radius: 13px;
+    padding: 12px 12px 8px; margin: 12px 0 16px;
   }
-  .chart-range { color: var(--text); text-transform: none; letter-spacing: 0; }
-  svg.spark { display: block; width: 100%; height: 110px; overflow: visible; }
+  .graph-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .graph-title { font-family: 'Mochiy Pop One', sans-serif; font-size: 11px; color: var(--ink-dim); }
+  .graph-span { font-size: 11px; color: var(--gold-lite); }
+  svg.spark { display: block; width: 100%; height: 104px; overflow: visible; }
 
-  .updated-line { font-size: 10.5px; color: var(--muted); margin-bottom: 18px; padding-left: 3px; }
-
-  .section-label {
-    font-family: 'Chakra Petch', sans-serif; font-size: 12px; font-weight: 600;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
-    margin: 4px 0 10px 2px; display: flex; justify-content: space-between; align-items: center;
+  /* ---- セクション見出し ---- */
+  .sect {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 16px 2px 9px;
   }
-  .recent-summary { color: var(--text); font-weight: 400; text-transform: none; letter-spacing: 0; }
+  .sect-title { font-family: 'Mochiy Pop One', sans-serif; font-size: 13px; }
+  .sect-note { font-size: 11px; color: var(--ink-dim); }
 
-  .ticket {
-    display: flex; background: var(--panel); border-radius: 10px; margin-bottom: 8px;
-    overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+  /* ---- 対戦結果 ---- */
+  .bout {
+    border-radius: 13px; margin-bottom: 8px; overflow: hidden;
+    border: 2px solid rgba(96,150,235,0.3); border-bottom-width: 3px;
+    background: linear-gradient(180deg, rgba(26,62,135,0.85), rgba(11,30,72,0.85));
   }
-  .ticket-edge { width: 5px; flex-shrink: 0; }
-  .ticket-body { flex: 1; padding: 9px 12px; min-width: 0; }
-  .ticket-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
-  .ticket-result { font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.06em; }
-  .ticket-mode { font-size: 10px; color: var(--muted); }
-  .ticket-mid { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-bottom: 3px; gap: 8px; }
-  .ticket-opp { color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .ticket-bottom { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
-  .ticket-change { font-weight: 600; }
+  .bout.win  { border-left: 5px solid var(--blue-side); }
+  .bout.lose { border-left: 5px solid var(--red-side); }
+  .bout.draw { border-left: 5px solid #8a97b5; }
 
-  .load-more {
-    width: 100%; background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
-    color: var(--muted); border-radius: 10px; padding: 11px; font-size: 12px;
-    font-family: inherit; cursor: pointer; margin-top: 4px;
+  .bout-face {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 11px; background: none; border: 0; color: inherit;
+    font-family: inherit; cursor: pointer; text-align: left;
   }
-  .load-more:active { transform: scale(0.98); }
-
-  .state { text-align: center; padding: 44px 16px; color: var(--muted); font-size: 13px; line-height: 1.8; }
-  .state.error { color: var(--rose); }
-  .state code { background: var(--panel); padding: 2px 6px; border-radius: 5px; font-size: 11px; word-break: break-all; }
-
-  .fab {
-    position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); right: 50%;
-    transform: translateX(260px);
-    background: var(--violet); color: #fff; border: none; border-radius: 999px;
-    width: 48px; height: 48px; font-size: 19px; cursor: pointer;
-    box-shadow: 0 6px 20px rgba(138,107,255,0.5);
+  .verdict {
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 12px; width: 46px; flex-shrink: 0;
   }
-  @media (max-width: 560px) { .fab { right: 18px; transform: none; } }
-  .fab:active { opacity: 0.75; }
-  .fab.busy { animation: spin 0.9s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .fab.busy { animation: none; } }
+  .win  .verdict { color: var(--blue-side); }
+  .lose .verdict { color: var(--red-side); }
+  .draw .verdict { color: #9fb0d0; }
 
-  button:focus-visible, .rank-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .crowns { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .crown-set { display: flex; gap: 2px; }
+  .crown-set svg { width: 13px; height: 11px; }
+  .crown-on.me  { fill: var(--blue-side); }
+  .crown-on.opp { fill: var(--red-side); }
+  .crown-off { fill: rgba(255,255,255,0.16); }
+
+  .bout-body { flex: 1; min-width: 0; }
+  .bout-vs {
+    font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 700;
+  }
+  .bout-meta { font-size: 10px; color: var(--ink-dim); margin-top: 2px; }
+  .delta { font-weight: 800; }
+  .delta.up { color: #7ee08a; }
+  .delta.down { color: var(--red-side); }
+  .chevron { flex-shrink: 0; color: var(--ink-dim); font-size: 11px; transition: transform 0.18s; }
+  .bout.open .chevron { transform: rotate(180deg); }
+
+  /* ---- デッキ ---- */
+  .decks { padding: 2px 11px 12px; }
+  .deck-side { margin-top: 10px; }
+  .deck-head {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10.5px; margin-bottom: 6px;
+  }
+  .deck-who { font-weight: 800; }
+  .deck-who.me  { color: var(--blue-side); }
+  .deck-who.opp { color: var(--red-side); }
+  .avg { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-dim); }
+  .avg svg { width: 10px; height: 13px; fill: var(--elixir); }
+
+  .deck-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  .card-slot { position: relative; border-radius: 7px; overflow: hidden; background: rgba(0,0,0,0.22); }
+  .card-slot img { display: block; width: 100%; aspect-ratio: 302/363; object-fit: cover; }
+  .card-lv {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    font-size: 8.5px; font-weight: 800; text-align: center; padding: 1px 0;
+    background: rgba(6,16,40,0.82); color: var(--gold-lite);
+  }
+  .card-slot.evo { box-shadow: 0 0 0 2px #b04cff inset; }
+  .deck-empty { font-size: 10.5px; color: var(--ink-dim); padding: 6px 0; }
+
+  /* ---- その他 ---- */
+  .more {
+    width: 100%; margin-top: 4px; padding: 11px;
+    font-family: inherit; font-weight: 700; font-size: 12px; color: var(--ink-dim);
+    background: rgba(20,48,110,0.7); border: 2px dashed rgba(96,150,235,0.35);
+    border-radius: 12px; cursor: pointer;
+  }
+  .more:active { transform: translateY(1px); }
+
+  .notice { text-align: center; padding: 46px 18px; color: var(--ink-dim); font-size: 13px; line-height: 1.9; }
+  .notice b { color: var(--gold-lite); }
+
+  .refresh {
+    position: fixed; bottom: max(20px, env(safe-area-inset-bottom)); right: 50%;
+    transform: translateX(268px);
+    width: 52px; height: 52px; border-radius: 50%; cursor: pointer; font-size: 21px;
+    color: #3d2600;
+    background: linear-gradient(180deg, var(--gold-lite), var(--gold) 50%, #e0a300);
+    border: 3px solid var(--gold-deep); border-bottom-width: 5px;
+    box-shadow: 0 5px 16px rgba(0,0,0,0.45);
+  }
+  @media (max-width: 590px) { .refresh { right: 16px; transform: none; } }
+  .refresh:active { transform: translateY(2px); border-bottom-width: 3px; }
+  @media (max-width: 590px) { .refresh:active { transform: translateY(2px); } }
+  .refresh.busy { animation: turn 0.9s linear infinite; }
+  @keyframes turn { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .refresh.busy { animation: none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top-bar">
-    <span class="top-title" id="page-title">Clash Battle Log</span>
-    <button class="back-btn" id="back" hidden>← ランキング</button>
+  <div class="masthead">
+    <span class="crest display" id="crest">CLASH BATTLE LOG</span>
+    <button class="cr-btn" id="back" hidden>← 順位表</button>
   </div>
-  <div id="tabs" class="metric-tabs" hidden></div>
+  <div id="tabs" class="tab-rail" hidden></div>
   <div id="main"></div>
 </div>
 
-<button id="refresh" class="fab" aria-label="更新">⟳</button>
+<button id="refresh" class="refresh" aria-label="更新">⟳</button>
 
 <script>
 // ---- データの場所 ----
 // data/ は GitHub の生ファイル配信から直接読む。
-// Pages 経由にすると data/ が更新されるたびに Pages の再デプロイが走り、
-// デプロイのキューが詰まってサイト全体が更新できなくなるため。
-// この形なら収集ジョブが何回commitしてもデプロイは発生しない。
+// Pages 経由にすると data/ の更新のたびに再デプロイが走ってしまうため。
 const REPO = "gabcat-fugyu/CR2";
 const BRANCH = "main";
 const DATA = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/data`;
 
-// ---- リーグ設定 ----
-// 現行のパス・オブ・レジェンドは leagueNumber 1 が マスターI。
-// 銅剣/銀剣/金剣(チャレンジャー系)は廃止済み。
-// 名前がズレていたらここを直せばよい。
+// ---- リーグ ----
+// leagueNumber 1〜3 がマスターI〜III、4〜6 が神々の挑戦I〜III、7 が天界。
 const LEAGUES = {
-  1: "マスターI",
-  2: "マスターII",
-  3: "マスターIII",
-  4: "神々の挑戦I",
-  5: "神々の挑戦II",
-  6: "神々の挑戦III",
+  1: "マスターI", 2: "マスターII", 3: "マスターIII",
+  4: "神々の挑戦I", 5: "神々の挑戦II", 6: "神々の挑戦III",
   7: "天界",
 };
+const TENKAI = 7; // 天界のリーグ番号。ここに乗るとレートが付く
 
-// リーグ画像。ファンキットの画像を assets/leagues/ に置くと使われる。
-// 無い場合はCSSで作ったバッジにフォールバックする。
 const LEAGUE_FILES = {
   1: "icon_League_Badge_Master_1.png",
   2: "icon_League_Badge_Master_2.png",
@@ -246,345 +342,357 @@ const LEAGUE_FILES = {
 };
 const LEAGUE_IMG = (n) => `./assets/leagues/${LEAGUE_FILES[n]}`;
 
-// ---- ランキング項目 ----
-// value: 並べる数値を返す (null なら「データ無し」扱いで最下位に回る)
-// display: 表示文字列 / sub: 補足行
-const METRICS = [
-  {
-    id: "rating", label: "レート",
-    value: (p) => p.rating,
-    display: (p) => p.rating != null ? String(p.rating) : "—",
-    sub: (p) => leagueName(p.leagueNumber),
-  },
-  {
-    id: "today", label: "今日の試合",
-    value: (p) => p.periods?.today?.battles ?? 0,
-    display: (p) => `${p.periods?.today?.battles ?? 0}<small>戦</small>`,
-    sub: (p) => winRateText(p.periods?.today),
-  },
-  {
-    id: "d3", label: "3日の試合",
-    value: (p) => p.periods?.d3?.battles ?? 0,
-    display: (p) => `${p.periods?.d3?.battles ?? 0}<small>戦</small>`,
-    sub: (p) => winRateText(p.periods?.d3),
-  },
-  {
-    id: "d3rate", label: "3日の勝率",
-    value: (p) => p.periods?.d3?.winRate,
-    display: (p) => p.periods?.d3?.winRate != null ? `${p.periods.d3.winRate}<small>%</small>` : "—",
-    sub: (p) => `${p.periods?.d3?.battles ?? 0}戦`,
-  },
-  {
-    id: "d7", label: "7日の試合",
-    value: (p) => p.periods?.d7?.battles ?? 0,
-    display: (p) => `${p.periods?.d7?.battles ?? 0}<small>戦</small>`,
-    sub: (p) => winRateText(p.periods?.d7),
-  },
-  {
-    id: "d7rate", label: "7日の勝率",
-    value: (p) => p.periods?.d7?.winRate,
-    display: (p) => p.periods?.d7?.winRate != null ? `${p.periods.d7.winRate}<small>%</small>` : "—",
-    sub: (p) => `${p.periods?.d7?.battles ?? 0}戦`,
-  },
-];
+const PAGE = 20;
 
-const PAGE_SIZE = 20;
-
-let index = null;
-let metricId = "rating";
-let view = "ranking";      // "ranking" | "detail"
-let selectedTag = null;
-let history = [];
-let trophyLog = [];
-let visibleCount = PAGE_SIZE;
+let index = null, metricId = "rank", view = "board";
+let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
+const opened = new Set();  // 展開中の試合
 
 const $main = document.getElementById("main");
 const $tabs = document.getElementById("tabs");
 const $refresh = document.getElementById("refresh");
 const $back = document.getElementById("back");
-const $title = document.getElementById("page-title");
+const $crest = document.getElementById("crest");
 
-const cleanTag = (t) => (t || "").trim().toUpperCase().replace(/^#/, "");
-const bust = (url) => `${url}?t=${Date.now()}`;
+const clean = (t) => (t || "").trim().toUpperCase().replace(/^#/, "");
+const bust = (u) => `${u}?t=${Date.now()}`;
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-function leagueName(n) {
-  if (n == null) return "リーグ情報なし";
-  return LEAGUES[n] || `リーグ${n}`;
-}
+const leagueName = (n) => n == null ? "未参加" : (LEAGUES[n] || `リーグ${n}`);
+const isTenkai = (p) => p.leagueNumber === TENKAI;
 
-function winRateText(period) {
-  if (!period || period.winRate == null) return `${period?.battles ?? 0}戦`;
-  return `${period.battles}戦 · 勝率${period.winRate}%`;
-}
-
-function parseBattleTime(raw) {
+function battleTime(raw) {
   if (!raw) return null;
-  const iso = raw.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*$/, "$1-$2-$3T$4:$5:$6Z");
-  const d = new Date(iso);
+  const d = new Date(raw.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2}).*$/, "$1-$2-$3T$4:$5:$6Z"));
   return isNaN(d.getTime()) ? null : d;
 }
-
-function relativeTime(iso) {
+function ago(iso) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "";
-  const mins = Math.floor((Date.now() - d.getTime()) / 60000);
-  if (mins < 1) return "たった今";
-  if (mins < 60) return mins + "分前";
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return hours + "時間前";
-  return Math.floor(hours / 24) + "日前";
+  const m = Math.floor((Date.now() - d.getTime()) / 60000);
+  if (m < 1) return "たった今";
+  if (m < 60) return m + "分前";
+  const h = Math.floor(m / 60);
+  return h < 24 ? h + "時間前" : Math.floor(h / 24) + "日前";
 }
 
-function esc(s) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]
-  );
-}
+const CROWN = `<svg viewBox="0 0 20 16" aria-hidden="true"><path d="M1.6 14.4V4.2l4.4 3.3L10 1.2l4 6.3 4.4-3.3v10.2z"/></svg>`;
+const DROP = `<svg viewBox="0 0 10 13" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8.6A5 5 0 0 0 10 8.6C10 5.6 5 0 5 0z"/></svg>`;
 
-// リーグバッジ。画像の読み込みに失敗したらCSSバッジに差し替える
-function badgeHtml(leagueNumber, cls) {
-  if (leagueNumber == null || !LEAGUE_FILES[leagueNumber]) {
-    const mark = leagueNumber == null ? "–" : leagueNumber;
-    return `<div class="${cls}"><div class="badge-fallback">${esc(mark)}</div></div>`;
+function crownRow(count, who) {
+  let out = "";
+  for (let i = 0; i < 3; i++) {
+    const on = i < count;
+    out += CROWN.replace("<svg", `<svg class="${on ? "crown-on " + who : "crown-off"}"`);
   }
-  const fallback = `<div class=&quot;badge-fallback&quot;>${leagueNumber}</div>`;
-  return `<div class="${cls}">
-    <img src="${LEAGUE_IMG(leagueNumber)}" alt="${esc(leagueName(leagueNumber))}"
-         onerror="this.parentNode.innerHTML='${fallback}'">
-  </div>`;
+  return `<span class="crown-set">${out}</span>`;
+}
+
+function shieldHtml(n, cls) {
+  if (n == null || !LEAGUE_FILES[n]) {
+    return `<div class="${cls}"><div class="shield-none">${n == null ? "–" : esc(n)}</div></div>`;
+  }
+  const fb = `<div class=&quot;shield-none&quot;>${n}</div>`;
+  return `<div class="${cls}"><img src="${LEAGUE_IMG(n)}" alt="${esc(leagueName(n))}"
+    onerror="this.parentNode.innerHTML='${fb}'"></div>`;
+}
+
+// ---- ランキング項目 ----
+// 「順位」は天界ならレート、それ以外はリーグの高さで並べる。
+// 天界(7)が最上位なので、リーグ番号→レートの順に見れば自然に並ぶ。
+const rateOf = (p) => (p.rating != null ? p.rating : -1);
+const leagueOf = (p) => (p.leagueNumber != null ? p.leagueNumber : -1);
+
+const METRICS = [
+  {
+    id: "rank", label: "順位",
+    cmp: (a, b) => (leagueOf(b) - leagueOf(a)) || (rateOf(b) - rateOf(a)),
+    has: (p) => p.leagueNumber != null,
+    show: (p) => isTenkai(p) && p.rating != null
+      ? `${p.rating}`
+      : `<span class="text">${esc(leagueName(p.leagueNumber))}</span>`,
+    wide: (p) => !(isTenkai(p) && p.rating != null),
+    sub: (p) => isTenkai(p) ? "天界" : (p.rating != null ? `レート ${p.rating}` : "レート未取得"),
+  },
+  {
+    id: "today", label: "今日の試合",
+    cmp: (a, b) => (b.periods?.today?.battles ?? 0) - (a.periods?.today?.battles ?? 0),
+    has: () => true,
+    show: (p) => `${p.periods?.today?.battles ?? 0}<u>戦</u>`,
+    sub: (p) => rateLine(p.periods?.today),
+  },
+  {
+    id: "d3", label: "3日の試合",
+    cmp: (a, b) => (b.periods?.d3?.battles ?? 0) - (a.periods?.d3?.battles ?? 0),
+    has: () => true,
+    show: (p) => `${p.periods?.d3?.battles ?? 0}<u>戦</u>`,
+    sub: (p) => rateLine(p.periods?.d3),
+  },
+  {
+    id: "d3w", label: "3日の勝率",
+    cmp: (a, b) => (b.periods?.d3?.winRate ?? -1) - (a.periods?.d3?.winRate ?? -1),
+    has: (p) => p.periods?.d3?.winRate != null,
+    show: (p) => p.periods?.d3?.winRate != null ? `${p.periods.d3.winRate}<u>%</u>` : "—",
+    sub: (p) => `${p.periods?.d3?.battles ?? 0}戦`,
+  },
+  {
+    id: "d7", label: "7日の試合",
+    cmp: (a, b) => (b.periods?.d7?.battles ?? 0) - (a.periods?.d7?.battles ?? 0),
+    has: () => true,
+    show: (p) => `${p.periods?.d7?.battles ?? 0}<u>戦</u>`,
+    sub: (p) => rateLine(p.periods?.d7),
+  },
+  {
+    id: "d7w", label: "7日の勝率",
+    cmp: (a, b) => (b.periods?.d7?.winRate ?? -1) - (a.periods?.d7?.winRate ?? -1),
+    has: (p) => p.periods?.d7?.winRate != null,
+    show: (p) => p.periods?.d7?.winRate != null ? `${p.periods.d7.winRate}<u>%</u>` : "—",
+    sub: (p) => `${p.periods?.d7?.battles ?? 0}戦`,
+  },
+];
+
+function rateLine(d) {
+  if (!d || d.winRate == null) return `${d?.battles ?? 0}戦`;
+  return `${d.battles}戦 · 勝率 ${d.winRate}%`;
 }
 
 // ---- 読み込み ----
-async function loadIndex() {
+async function loadBoard() {
   $refresh.classList.add("busy");
   try {
     const res = await fetch(bust(`${DATA}/index.json`), { cache: "no-store" });
-    if (!res.ok) throw new Error(String(res.status));
+    if (!res.ok) throw new Error(res.status);
     index = await res.json();
-    render();
-  } catch (e) {
+    draw();
+  } catch {
     $tabs.hidden = true;
-    $main.innerHTML = `<div class="state error">
-      まだデータがありません。<br>GitHubのActionsタブから<br>
-      <code>クラロワ戦績を収集</code><br>を一度実行してください。</div>`;
+    $main.innerHTML = `<div class="notice">
+      まだ戦績がありません。<br>
+      GitHubの Actions から <b>クラロワ戦績を収集</b> を実行すると、<br>ここに順位表が出ます。</div>`;
   } finally {
     $refresh.classList.remove("busy");
   }
 }
 
-async function loadPlayer(tag) {
-  selectedTag = tag;
-  view = "detail";
-  visibleCount = PAGE_SIZE;
-  history = [];
-  trophyLog = [];
-  render();
+async function openPlayer(tag) {
+  selectedTag = tag; view = "player"; shown = PAGE;
+  history = []; trophyLog = []; opened.clear();
+  draw();
   const [h, t] = await Promise.all([
-    fetch(bust(`${DATA}/${tag}/history.json`), { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
-    fetch(bust(`${DATA}/${tag}/trophies.json`), { cache: "no-store" }).then((r) => (r.ok ? r.json() : [])).catch(() => []),
+    fetch(bust(`${DATA}/${tag}/history.json`), { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
+    fetch(bust(`${DATA}/${tag}/trophies.json`), { cache: "no-store" }).then(r => r.ok ? r.json() : []).catch(() => []),
   ]);
-  if (selectedTag !== tag) return; // 待っている間に別の人が選ばれた
+  if (selectedTag !== tag) return;
   history = Array.isArray(h) ? h : [];
   trophyLog = Array.isArray(t) ? t : [];
-  render();
+  draw();
 }
 
-// ---- ランキング描画 ----
-function renderTabs() {
-  $tabs.hidden = view !== "ranking";
-  if (view !== "ranking") return;
-  $tabs.innerHTML = METRICS.map(
-    (m) => `<button class="metric-tab${m.id === metricId ? " active" : ""}" data-id="${m.id}">${esc(m.label)}</button>`
-  ).join("");
-  $tabs.querySelectorAll(".metric-tab").forEach((b) => {
-    b.onclick = () => { metricId = b.dataset.id; render(); };
+// ---- 順位表 ----
+function drawTabs() {
+  $tabs.hidden = view !== "board";
+  if (view !== "board") return;
+  $tabs.innerHTML = METRICS.map(m =>
+    `<button class="cr-btn${m.id === metricId ? " on" : ""}" data-id="${m.id}">${esc(m.label)}</button>`).join("");
+  $tabs.querySelectorAll("button").forEach(b => {
+    b.onclick = () => { metricId = b.dataset.id; draw(); };
   });
 }
 
-function renderRanking() {
-  const metric = METRICS.find((m) => m.id === metricId) || METRICS[0];
-  const players = [...(index?.players || [])];
-
-  // 値が null のひとは「データ無し」として末尾へ
-  players.sort((a, b) => {
-    const va = metric.value(a), vb = metric.value(b);
-    if (va == null && vb == null) return 0;
-    if (va == null) return 1;
-    if (vb == null) return -1;
-    return vb - va;
+function drawBoard() {
+  const m = METRICS.find(x => x.id === metricId) || METRICS[0];
+  const list = [...(index?.players || [])].sort((a, b) => {
+    const ha = m.has(a), hb = m.has(b);
+    if (ha !== hb) return ha ? -1 : 1;   // データ無しは末尾へ
+    return m.cmp(a, b);
   });
 
-  const rows = players.map((p, i) => {
-    const tag = cleanTag(p.tag);
-    const hasValue = metric.value(p) != null;
-    const topClass = hasValue && i === 0 ? " top1" : hasValue && i === 1 ? " top2" : hasValue && i === 2 ? " top3" : "";
-    return `
-      <button class="rank-row${topClass}" data-tag="${esc(tag)}">
-        <span class="rank-pos">${i + 1}</span>
-        ${badgeHtml(p.leagueNumber, "rank-badge")}
-        <span class="rank-body">
-          <span class="rank-name">${esc(p.label || p.name)}</span>
-          <span class="rank-sub">${esc(metric.sub(p))}</span>
-        </span>
-        <span class="rank-value${hasValue ? "" : " dim"}">${metric.display(p)}</span>
-      </button>`;
+  const rows = list.map((p, i) => {
+    const ok = m.has(p);
+    const rankCls = ok && i === 0 ? " gold" : ok && i === 1 ? " silver" : ok && i === 2 ? " bronze" : "";
+    const wide = m.wide && m.wide(p) ? " text" : "";
+    return `<button class="plate${rankCls}" data-tag="${esc(clean(p.tag))}">
+      <span class="medal display">${i + 1}</span>
+      ${shieldHtml(p.leagueNumber, "shield")}
+      <span class="plate-body">
+        <span class="plate-name">${esc(p.label || p.name)}</span>
+        <span class="plate-sub">${esc(m.sub(p))}</span>
+      </span>
+      <span class="plate-value${ok ? wide : " none"}">${ok ? m.show(p) : "—"}</span>
+    </button>`;
   }).join("");
 
-  $main.innerHTML = `
-    ${rows || `<div class="state">プレイヤーがいません</div>`}
-    ${index?.updatedAt ? `<div class="updated-line" style="margin-top:14px">最終更新 ${esc(relativeTime(index.updatedAt))}</div>` : ""}
-  `;
+  $main.innerHTML = (rows || `<div class="notice">まだ誰も登録されていません。</div>`) +
+    (index?.updatedAt ? `<div class="sect"><span class="sect-note">最終更新 ${esc(ago(index.updatedAt))}</span></div>` : "");
 
-  $main.querySelectorAll(".rank-row").forEach((b) => {
-    b.onclick = () => loadPlayer(b.dataset.tag);
-  });
+  $main.querySelectorAll(".plate").forEach(b => { b.onclick = () => openPlayer(b.dataset.tag); });
 }
 
-// ---- 詳細描画 ----
-function sparkline(points) {
+// ---- 推移グラフ ----
+function spark(points) {
   if (points.length < 2) return "";
-  const W = 100, H = 110, pad = 6;
-  const xs = points.map((p) => p.time), ys = points.map((p) => p.value);
-  const minX = Math.min(...xs), maxX = Math.max(...xs);
-  const minY = Math.min(...ys), maxY = Math.max(...ys);
-  const spanX = maxX - minX || 1, spanY = maxY - minY || 1;
-  const coords = points.map((p) => [
-    ((p.time - minX) / spanX) * W,
-    H - pad - ((p.value - minY) / spanY) * (H - pad * 2),
-  ]);
-  const line = coords.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
-  return `
-    <svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="推移">
-      <defs><linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#ffc93c" stop-opacity="0.28"/>
-        <stop offset="100%" stop-color="#ffc93c" stop-opacity="0"/>
-      </linearGradient></defs>
-      <path d="${line} L${W},${H} L0,${H} Z" fill="url(#fade)"/>
-      <path d="${line}" fill="none" stroke="#ffc93c" stroke-width="1.4"
-            vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
-    </svg>`;
+  const W = 100, H = 104, pad = 7;
+  const xs = points.map(p => p.t), ys = points.map(p => p.v);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const sx = x1 - x0 || 1, sy = y1 - y0 || 1;
+  const pts = points.map(p => [((p.t - x0) / sx) * W, H - pad - ((p.v - y0) / sy) * (H - pad * 2)]);
+  const d = pts.map(([x, y], i) => `${i ? "L" : "M"}${x.toFixed(2)},${y.toFixed(2)}`).join(" ");
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="推移">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd23f" stop-opacity="0.34"/>
+      <stop offset="100%" stop-color="#ffd23f" stop-opacity="0"/>
+    </linearGradient></defs>
+    <path d="${d} L${W},${H} L0,${H} Z" fill="url(#g)"/>
+    <path d="${d}" fill="none" stroke="#ffd23f" stroke-width="1.6"
+      vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
+  </svg>`;
 }
 
-function renderDetail() {
-  const p = (index?.players || []).find((x) => cleanTag(x.tag) === selectedTag);
-  if (!p) { $main.innerHTML = `<div class="state error">プレイヤーが見つかりません</div>`; return; }
+// ---- デッキ ----
+function deckHtml(player, who) {
+  const cards = player?.cards || [];
+  if (!cards.length) return `<div class="deck-empty">デッキ情報なし</div>`;
+  const costs = cards.map(c => c.elixirCost).filter(v => typeof v === "number");
+  const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length).toFixed(1) : null;
+  const slots = cards.map(c => {
+    const url = c.iconUrls?.evolutionMedium || c.iconUrls?.medium || "";
+    const evo = c.iconUrls?.evolutionMedium ? " evo" : "";
+    const lv = c.level != null ? `Lv${c.level}` : "";
+    return `<div class="card-slot${evo}">
+      ${url ? `<img src="${esc(url)}" alt="${esc(c.name || "")}" loading="lazy">` : ""}
+      ${lv ? `<span class="card-lv">${esc(lv)}</span>` : ""}
+    </div>`;
+  }).join("");
+  return `
+    <div class="deck-head">
+      <span class="deck-who ${who}">${who === "me" ? "自分" : esc(player.name || "相手")}</span>
+      ${avg ? `<span class="avg">${DROP} 平均 ${avg}</span>` : ""}
+    </div>
+    <div class="deck-grid">${slots}</div>`;
+}
 
-  const chip = (label, value, color) =>
-    `<div class="stat-chip"><span class="stat-chip-value" style="color:${color}">${value}</span>
-     <span class="stat-chip-label">${esc(label)}</span></div>`;
+// ---- 選手ページ ----
+function drawPlayer() {
+  const p = (index?.players || []).find(x => clean(x.tag) === selectedTag);
+  if (!p) { $main.innerHTML = `<div class="notice">この選手は名簿にいません。</div>`; return; }
 
   const per = p.periods || {};
-  const rateChip = (label, d) =>
-    chip(label, d?.winRate != null ? `${d.winRate}<small style="font-size:11px">%</small>` : "—", "var(--teal)");
+  const tile = (cap, num, color) =>
+    `<div class="tile"><div class="tile-num" style="color:${color}">${num}</div><div class="tile-cap">${esc(cap)}</div></div>`;
+  const pct = (d) => d?.winRate != null ? `${d.winRate}<u>%</u>` : "—";
 
-  // レートが無ければトロフィー推移、あればレート推移
-  const useRating = p.rating != null;
+  const useRate = p.rating != null;
   const pts = [];
-  let last = null;
+  let prev = null;
   for (const t of trophyLog) {
-    const v = useRating ? t.rating : t.trophies;
-    if (typeof v !== "number") continue;
-    if (v !== last) { pts.push({ time: new Date(t.time).getTime(), value: v }); last = v; }
+    const v = useRate ? t.rating : t.trophies;
+    if (typeof v !== "number" || v === prev) continue;
+    pts.push({ t: new Date(t.time).getTime(), v });
+    prev = v;
   }
-  const chartPts = pts.slice(-150);
-  const chartRange = chartPts.length > 1
-    ? `${Math.min(...chartPts.map(x => x.value))} – ${Math.max(...chartPts.map(x => x.value))}` : "";
+  const gp = pts.slice(-150);
+  const span = gp.length > 1 ? `${Math.min(...gp.map(x => x.v))} – ${Math.max(...gp.map(x => x.v))}` : "";
 
-  const rows = history.slice(0, visibleCount).map((b) => {
-    const me = (b.team || []).find((x) => cleanTag(x.tag) === selectedTag) || (b.team || [])[0] || {};
+  const bouts = history.slice(0, shown).map((b) => {
+    const key = `${b.battleTime}_${(b.team?.[0]?.tag) || ""}`;
+    const me = (b.team || []).find(x => clean(x.tag) === selectedTag) || (b.team || [])[0] || {};
     const opp = (b.opponent || [])[0] || {};
     const mc = me.crowns ?? 0, oc = opp.crowns ?? 0;
-    const win = mc > oc, draw = mc === oc;
-    const color = draw ? "var(--muted)" : win ? "var(--teal)" : "var(--rose)";
-    const label = draw ? "DRAW" : win ? "WIN" : "LOSE";
+    const cls = mc > oc ? "win" : mc < oc ? "lose" : "draw";
+    const word = mc > oc ? "WIN" : mc < oc ? "LOSE" : "DRAW";
     const ch = me.trophyChange;
-    const when = parseBattleTime(b.battleTime);
-    return `
-      <div class="ticket">
-        <div class="ticket-edge" style="background:${color}"></div>
-        <div class="ticket-body">
-          <div class="ticket-top">
-            <span class="ticket-result" style="color:${color}">${label}</span>
-            <span class="ticket-mode">${esc((b.type || "battle").replace(/([A-Z])/g, " $1").trim())}</span>
-          </div>
-          <div class="ticket-mid">
-            <span>👑${mc} — ${oc}👑</span>
-            <span class="ticket-opp">vs ${esc(opp.name || "?")}</span>
-          </div>
-          <div class="ticket-bottom">
-            <span>${when ? when.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : ""}</span>
+    const when = battleTime(b.battleTime);
+    const isOpen = opened.has(key);
+
+    return `<div class="bout ${cls}${isOpen ? " open" : ""}">
+      <button class="bout-face" data-key="${esc(key)}" aria-expanded="${isOpen}">
+        <span class="verdict">${word}</span>
+        <span class="crowns">${crownRow(mc, "me")}${crownRow(oc, "opp")}</span>
+        <span class="bout-body">
+          <span class="bout-vs">vs ${esc(opp.name || "?")}</span>
+          <span class="bout-meta">
+            ${when ? esc(when.toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })) : ""}
             ${typeof ch === "number" && ch !== 0
-              ? `<span class="ticket-change" style="color:${ch > 0 ? "var(--teal)" : "var(--rose)"}">${ch > 0 ? "+" + ch : ch}</span>` : ""}
-          </div>
-        </div>
-      </div>`;
+              ? ` · <span class="delta ${ch > 0 ? "up" : "down"}">${ch > 0 ? "+" + ch : ch}</span>` : ""}
+          </span>
+        </span>
+        <span class="chevron">▼</span>
+      </button>
+      ${isOpen ? `<div class="decks">
+        <div class="deck-side">${deckHtml(me, "me")}</div>
+        <div class="deck-side">${deckHtml(opp, "opp")}</div>
+      </div>` : ""}
+    </div>`;
   }).join("");
 
   $main.innerHTML = `
-    <div class="crystal-wrap">
-      <div class="crystal-shape"></div>
-      <div class="crystal-content">
-        <div class="player-name">${esc(p.name)}</div>
-        ${p.clan ? `<div class="player-clan">${esc(p.clan)}</div>` : ""}
-        ${badgeHtml(p.leagueNumber, "detail-badge")}
-        ${useRating
-          ? `<div class="rating-label">レート</div><div class="rating-num">${esc(p.rating)}</div>
-             <div class="rating-sub">${esc(leagueName(p.leagueNumber))}${p.bestRating != null ? ` · 最高 ${esc(p.bestRating)}` : ""}</div>`
-          : `<div class="rating-label">トロフィー</div><div class="rating-num">${esc(p.trophies ?? "—")}</div>
-             <div class="rating-sub">${esc(leagueName(p.leagueNumber))}</div>`}
-      </div>
+    <div class="banner">
+      <div class="banner-name display outlined">${esc(p.name)}</div>
+      ${p.clan ? `<div class="banner-clan">${esc(p.clan)}</div>` : ""}
+      ${shieldHtml(p.leagueNumber, "banner-shield")}
+      <div class="banner-league">${esc(leagueName(p.leagueNumber))}</div>
+      ${useRate
+        ? `<div class="plaque"><span class="plaque-label">レート</span><span class="plaque-num">${esc(p.rating)}</span></div>
+           ${p.bestRating != null ? `<div class="banner-foot">自己最高 ${esc(p.bestRating)}</div>` : ""}`
+        : `<div class="plaque"><span class="plaque-label">トロフィー</span><span class="plaque-num">${esc(p.trophies ?? "—")}</span></div>
+           <div class="banner-foot">天界に乗るとレートが出ます</div>`}
     </div>
 
-    <div class="stat-strip">
-      ${chip("今日", (per.today?.battles ?? 0) + "<small style='font-size:11px'>戦</small>", "var(--gold)")}
-      ${chip("3日", (per.d3?.battles ?? 0) + "<small style='font-size:11px'>戦</small>", "var(--violet)")}
-      ${chip("7日", (per.d7?.battles ?? 0) + "<small style='font-size:11px'>戦</small>", "var(--violet)")}
-      ${chip("記録済み", p.storedBattles ?? history.length, "var(--text)")}
+    <div class="tiles">
+      ${tile("今日", (per.today?.battles ?? 0) + "<u>戦</u>", "var(--gold)")}
+      ${tile("3日", (per.d3?.battles ?? 0) + "<u>戦</u>", "var(--ink)")}
+      ${tile("7日", (per.d7?.battles ?? 0) + "<u>戦</u>", "var(--ink)")}
+      ${tile("記録済み", p.storedBattles ?? history.length, "var(--ink-dim)")}
+    </div>
+    <div class="tiles">
+      ${tile("今日の勝率", pct(per.today), "var(--blue-side)")}
+      ${tile("3日の勝率", pct(per.d3), "var(--blue-side)")}
+      ${tile("7日の勝率", pct(per.d7), "var(--blue-side)")}
+      ${tile("通算試合", p.battleCount ?? "—", "var(--ink-dim)")}
     </div>
 
-    <div class="stat-strip">
-      ${rateChip("今日の勝率", per.today)}
-      ${rateChip("3日の勝率", per.d3)}
-      ${rateChip("7日の勝率", per.d7)}
-      ${chip("通算試合", p.battleCount ?? "—", "var(--muted)")}
+    ${gp.length > 1 ? `<div class="graph">
+      <div class="graph-head">
+        <span class="graph-title">${useRate ? "レートの動き" : "トロフィーの動き"}</span>
+        <span class="graph-span">${esc(span)}</span>
+      </div>${spark(gp)}</div>` : ""}
+
+    <div class="sect">
+      <span class="sect-title display">対戦履歴</span>
+      <span class="sect-note">全${history.length}試合 · タップでデッキ</span>
     </div>
 
-    ${chartPts.length > 1 ? `
-      <div class="chart-card">
-        <div class="chart-head"><span>${useRating ? "レート推移" : "トロフィー推移"}</span><span class="chart-range">${esc(chartRange)}</span></div>
-        ${sparkline(chartPts)}
-      </div>` : ""}
-
-    <div class="section-label">
-      <span>対戦履歴</span>
-      <span class="recent-summary">全${history.length}試合</span>
-    </div>
-
-    ${history.length === 0 ? `<div class="state">読み込み中…</div>` : rows}
-
-    ${visibleCount < history.length
-      ? `<button class="load-more" id="more">もっと見る(残り${history.length - visibleCount}件)</button>` : ""}
+    ${history.length === 0 ? `<div class="notice">読み込み中…</div>` : bouts}
+    ${shown < history.length ? `<button class="more" id="more">さらに${Math.min(PAGE, history.length - shown)}試合</button>` : ""}
   `;
 
+  $main.querySelectorAll(".bout-face").forEach(b => {
+    b.onclick = () => {
+      const k = b.dataset.key;
+      opened.has(k) ? opened.delete(k) : opened.add(k);
+      draw();
+    };
+  });
   const more = document.getElementById("more");
-  if (more) more.onclick = () => { visibleCount += PAGE_SIZE; render(); };
+  if (more) more.onclick = () => { shown += PAGE; draw(); };
 }
 
-function render() {
-  $back.hidden = view !== "detail";
-  $title.textContent = view === "detail" ? "プレイヤー詳細" : "Clash Battle Log";
-  renderTabs();
-  if (view === "detail") renderDetail();
-  else renderRanking();
+function draw() {
+  $back.hidden = view !== "player";
+  $crest.textContent = view === "player" ? "PLAYER" : "CLASH BATTLE LOG";
+  drawTabs();
+  view === "player" ? drawPlayer() : drawBoard();
 }
 
-$back.onclick = () => { view = "ranking"; selectedTag = null; render(); };
+$back.onclick = () => { view = "board"; selectedTag = null; opened.clear(); draw(); };
 $refresh.onclick = () => {
-  if (view === "detail" && selectedTag) { const t = selectedTag; loadIndex().then(() => loadPlayer(t)); }
-  else loadIndex();
+  if (view === "player" && selectedTag) { const t = selectedTag; loadBoard().then(() => openPlayer(t)); }
+  else loadBoard();
 };
 
-loadIndex();
+loadBoard();
 </script>
 </body>
 </html>
