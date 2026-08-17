@@ -1,0 +1,51 @@
+name: スパーキー使いを集計
+
+# 1000人分の対戦ログを見るので10分前後かかる。30分おきで十分。
+# GitHubの schedule は当てにならないので、cron-job.org からも叩けるよう
+# workflow_dispatch を残してある。
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# collect とは別の枠。走っている途中に次が始まらないようにする
+concurrency:
+  group: sparky
+  cancel-in-progress: false
+
+jobs:
+  sparky:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: スパーキー使いを探す
+        env:
+          CR_API_TOKEN: ${{ secrets.CR_API_TOKEN }}
+          SPARKY_SCAN: "1000" # 何位まで調べるか
+          SPARKY_THRESHOLD: "0.5" # 直近の何割で使っていれば「使い」とするか
+          SPARKY_DELAY: "0.3" # APIを叩く間隔(秒)
+        run: python sparky.py
+
+      - name: 変更があればcommit
+        run: |
+          git config user.name "cr-collector"
+          git config user.email "actions@github.com"
+          git add data/sparky.json
+          # 差分が無い場合は commit せずに正常終了させる
+          if git diff --staged --quiet; then
+            echo "更新なし"
+          else
+            git commit -m "スパーキー使いを更新 $(date -u '+%Y-%m-%d %H:%M UTC')"
+            # 収集ジョブとぶつかっても落ちないように、取り込んでから送る
+            git pull --rebase --autostash origin main
+            git push
+          fi
