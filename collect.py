@@ -264,7 +264,7 @@ def same_snapshot(a, b):
     return all(a.get(k) == b.get(k) for k in keys)
 
 
-def collect_player(tag: str, label, token: str):
+def collect_player(tag: str, label, groups, token: str):
     """1人分を取得して保存する。結果のサマリを返す。"""
     encoded = f"%23{tag}"
     player = api_get(f"/players/{encoded}", token)
@@ -318,6 +318,7 @@ def collect_player(tag: str, label, token: str):
         "tag": player.get("tag"),
         "name": player.get("name"),
         "label": label or player.get("name"),
+        "groups": groups or [],
         # 天界(パス・オブ・レジェンド)
         "rating": pol.get("trophies"),
         "leagueNumber": pol.get("leagueNumber"),
@@ -352,7 +353,14 @@ def collect_player(tag: str, label, token: str):
 
 
 def read_players():
-    """players.json から追跡対象を読む。[(タグ, 表示名), ...] を返す。"""
+    """players.json から追跡対象を読む。[(タグ, 表示名, グループ一覧), ...] を返す。
+
+    グループはランキングを分ける単位(例: チャンネルメンバーの所属)。
+    掛け持ちできるよう、書き方は次のどちらでもよい。
+        "group": "スパ研"
+        "group": ["スパ研", "SMAP"]
+    キー名は group でも groups でも受け付ける。
+    """
     raw = load_json(PLAYERS_FILE, None)
     if raw is None:
         raise SystemExit("players.json が見つからないか、内容が壊れています")
@@ -360,8 +368,21 @@ def read_players():
     entries = []
     for item in raw.get("players", []):
         tag = str(item.get("tag", "")).strip().upper().lstrip("#")
-        if tag:
-            entries.append((tag, item.get("name") or None))
+        if not tag:
+            continue
+
+        value = item.get("groups", item.get("group"))
+        if isinstance(value, str):
+            value = [value]
+        elif not isinstance(value, list):
+            value = []
+        groups = []
+        for g in value:
+            g = str(g).strip()
+            if g and g not in groups:
+                groups.append(g)
+
+        entries.append((tag, item.get("name") or None, groups))
     return entries
 
 
@@ -379,17 +400,25 @@ def main():
     print(f"{len(entries)}人分を取得します")
 
     summaries = []
-    for i, (tag, label) in enumerate(entries):
-        result = collect_player(tag, label, token)
+    for i, (tag, label, groups) in enumerate(entries):
+        result = collect_player(tag, label, groups, token)
         if result:
             summaries.append(result)
         if i < len(entries) - 1:
             time.sleep(1)
 
+    # グループの一覧。players.json に書いた順を保つ
+    all_groups = []
+    for _, _, groups in entries:
+        for g in groups:
+            if g not in all_groups:
+                all_groups.append(g)
+
     save_json(
         INDEX_FILE,
         {
             "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "groups": all_groups,
             "players": summaries,
         },
     )

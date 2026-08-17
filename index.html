@@ -121,6 +121,8 @@
   .usage-bar span { display: block; height: 100%; background: var(--elixir); }
 
   .tab-rail { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 16px; padding: 2px 0 5px; }
+  .tab-rail.sub { margin-bottom: 6px; }
+  .tab-rail.sub:last-child { margin-bottom: 14px; }
   .tab-rail::-webkit-scrollbar { display: none; }
   .tab-rail .cr-btn { flex: 0 0 auto; }
 
@@ -509,7 +511,7 @@ function chaosList(battle, tag) {
 // 段階ごとの色 (カードのレアリティ配色に合わせる)
 const CHAOS_COLORS = { 1: "lv1", 2: "lv2", 3: "lv3" };
 
-let index = null, metricId = "rank", view = "board";
+let index = null, metricId = "rank", view = "board", groupFilter = "ALL";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
 let sparky = null, sparkyError = false, sparkyRegion = "jp";   // スパーキー使い
 const opened = new Set();  // 展開中の試合・デッキ
@@ -655,19 +657,47 @@ async function openPlayer(tag) {
 }
 
 // ---- 順位表 ----
+// その人の所属グループ。複数所属に対応(古い単数形式も読める)
+function groupsOf(p) {
+  if (Array.isArray(p.groups)) return p.groups;
+  return p.group ? [p.group] : [];
+}
+
 function drawTabs() {
   $tabs.hidden = view !== "board";
   if (view !== "board") return;
-  $tabs.innerHTML = METRICS.map(m =>
-    `<button class="cr-btn${m.id === metricId ? " on" : ""}" data-id="${m.id}">${esc(m.label)}</button>`).join("");
-  $tabs.querySelectorAll("button").forEach(b => {
+
+  // 登録した人にグループが付いていれば、絞り込みのタブも出す
+  const groups = index?.groups || [];
+  const groupRail = groups.length > 1
+    ? `<div class="tab-rail sub">
+        <button class="cr-btn${groupFilter === "ALL" ? " on" : ""}" data-group="ALL">全員</button>
+        ${groups.map(g =>
+          `<button class="cr-btn${groupFilter === g ? " on" : ""}" data-group="${esc(g)}">${esc(g)}</button>`
+        ).join("")}
+      </div>`
+    : "";
+
+  $tabs.innerHTML = `
+    ${groupRail}
+    <div class="tab-rail sub">${METRICS.map(m =>
+      `<button class="cr-btn${m.id === metricId ? " on" : ""}" data-id="${m.id}">${esc(m.label)}</button>`
+    ).join("")}</div>`;
+
+  $tabs.querySelectorAll("[data-group]").forEach(b => {
+    b.onclick = () => { groupFilter = b.dataset.group; draw(); };
+  });
+  $tabs.querySelectorAll("[data-id]").forEach(b => {
     b.onclick = () => { metricId = b.dataset.id; draw(); };
   });
 }
 
 function drawBoard() {
   const m = METRICS.find(x => x.id === metricId) || METRICS[0];
-  const list = [...(index?.players || [])].sort((a, b) => {
+  const pool = (index?.players || []).filter(p =>
+    groupFilter === "ALL" || groupsOf(p).includes(groupFilter));
+
+  const list = [...pool].sort((a, b) => {
     const ha = m.has(a), hb = m.has(b);
     if (ha !== hb) return ha ? -1 : 1;   // データ無しは末尾へ
     return m.cmp(a, b);
@@ -682,13 +712,19 @@ function drawBoard() {
       ${shieldHtml(p.leagueNumber, "shield")}
       <span class="plate-body">
         <span class="plate-name">${esc(p.label || p.name)}</span>
-        <span class="plate-sub">${esc(m.sub(p))}</span>
+        <span class="plate-sub">${esc(m.sub(p))}${
+          groupFilter === "ALL" && groupsOf(p).length
+            ? ` · ${esc(groupsOf(p).join("/"))}` : ""}</span>
       </span>
       <span class="plate-value${ok ? wide : " none"}">${ok ? m.show(p) : "—"}</span>
     </button>`;
   }).join("");
 
-  $main.innerHTML = (rows || `<div class="notice">まだ誰も登録されていません。</div>`) +
+  const empty = groupFilter === "ALL"
+    ? `<div class="notice">まだ誰も登録されていません。</div>`
+    : `<div class="notice"><b>${esc(groupFilter)}</b>に登録された人がいません。</div>`;
+
+  $main.innerHTML = (rows || empty) +
     (index?.updatedAt ? `<div class="sect"><span class="sect-note">最終更新 ${esc(ago(index.updatedAt))}</span></div>` : "");
 
   $main.querySelectorAll(".plate").forEach(b => { b.onclick = () => openPlayer(b.dataset.tag); });
