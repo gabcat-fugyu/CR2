@@ -104,6 +104,22 @@
   }
   .cr-btn:focus-visible { outline: 3px solid var(--gold-lite); outline-offset: 2px; }
 
+  .masthead-btns { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* スパーキー欄 */
+  .lede {
+    background: rgba(6,16,40,0.4);
+    border: 1px solid rgba(120,170,240,0.25); border-radius: 11px;
+    padding: 9px 11px; margin-bottom: 12px;
+    font-size: 10.5px; color: var(--ink-dim); line-height: 1.7;
+  }
+  .lede b { color: var(--gold-lite); }
+  .usage-bar {
+    display: block; height: 3px; border-radius: 2px; margin-top: 4px;
+    background: rgba(255,255,255,0.12); overflow: hidden;
+  }
+  .usage-bar span { display: block; height: 100%; background: var(--elixir); }
+
   .tab-rail { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 16px; padding: 2px 0 5px; }
   .tab-rail::-webkit-scrollbar { display: none; }
   .tab-rail .cr-btn { flex: 0 0 auto; }
@@ -145,11 +161,12 @@
 
   .plate-body { flex: 1; min-width: 0; }
   .plate-name {
+    display: block;
     font-weight: 800; font-size: 14px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap;
     text-shadow: 0 1.5px 0 rgba(4,12,32,0.55);
   }
-  .plate-sub { font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
+  .plate-sub { display: block; font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
 
   .plate-value {
     flex-shrink: 0; text-align: right;
@@ -381,7 +398,10 @@
 <div class="wrap">
   <div class="masthead">
     <span class="crest display" id="crest">CLASH BATTLE LOG</span>
-    <button class="cr-btn" id="back" hidden>← 順位表</button>
+    <span class="masthead-btns">
+      <button class="cr-btn" id="nav-sparky">⚡ 日本</button>
+      <button class="cr-btn" id="back" hidden>← 戻る</button>
+    </span>
   </div>
   <div id="tabs" class="tab-rail" hidden></div>
   <div id="main"></div>
@@ -491,12 +511,14 @@ const CHAOS_COLORS = { 1: "lv1", 2: "lv2", 3: "lv3" };
 
 let index = null, metricId = "rank", view = "board";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
-const opened = new Set();  // 展開中の試合
+let sparky = null, sparkyError = false;   // 日本のスパーキー使い
+const opened = new Set();  // 展開中の試合・デッキ
 
 const $main = document.getElementById("main");
 const $tabs = document.getElementById("tabs");
 const $refresh = document.getElementById("refresh");
 const $back = document.getElementById("back");
+const $navSparky = document.getElementById("nav-sparky");
 const $crest = document.getElementById("crest");
 
 const clean = (t) => (t || "").trim().toUpperCase().replace(/^#/, "");
@@ -872,16 +894,90 @@ function drawPlayer() {
   if (more) more.onclick = () => { shown += PAGE; draw(); };
 }
 
-function draw() {
-  $back.hidden = view !== "player";
-  $crest.textContent = view === "player" ? "PLAYER" : "CLASH BATTLE LOG";
-  drawTabs();
-  view === "player" ? drawPlayer() : drawBoard();
+// ---- 日本のスパーキー使い ----
+async function openSparky() {
+  view = "sparky";
+  opened.clear();
+  draw();
+  if (sparky) return;          // 一度読んだら使い回す
+  try {
+    sparky = await loadData("sparky.json");
+    sparkyError = false;
+  } catch {
+    sparkyError = true;
+  }
+  if (view === "sparky") draw();
 }
 
+function drawSparky() {
+  if (sparkyError) {
+    $main.innerHTML = `<div class="notice">
+      まだ集計されていません。<br>
+      GitHubの Actions から <b>スパーキー使いを集計</b> を実行してください。</div>`;
+    return;
+  }
+  if (!sparky) { $main.innerHTML = `<div class="notice">集計を読み込み中…</div>`; return; }
+
+  const list = sparky.players || [];
+  const rows = list.map((p) => {
+    const key = "sp:" + clean(p.tag);
+    const isOpen = opened.has(key);
+    const cls = p.rank === 1 ? " gold" : p.rank === 2 ? " silver" : p.rank === 3 ? " bronze" : "";
+    const deck = { name: p.name, cards: p.deck || [], supportCards: p.supportCards || [] };
+    return `<div class="bout${isOpen ? " open" : ""}" style="border-left:5px solid var(--elixir)">
+      <button class="plate${cls}" data-key="${esc(key)}"
+        style="margin:0;border:0;border-radius:0;background:none">
+        <span class="medal display">${p.rank}</span>
+        <span class="plate-body">
+          <span class="plate-name">${esc(p.name)}</span>
+          <span class="plate-sub">
+            使用率 ${p.usageRate}%${p.winRate != null ? ` · 勝率 ${p.winRate}%` : ""}
+            ${p.clan ? ` · ${esc(p.clan)}` : ""}
+          </span>
+          <span class="usage-bar"><span style="width:${Math.min(100, p.usageRate)}%"></span></span>
+        </span>
+        <span class="plate-value">${p.rating != null ? esc(p.rating) : "—"}</span>
+      </button>
+      ${isOpen ? `<div class="decks">${deckHtml(deck, "opp", null)}</div>` : ""}
+    </div>`;
+  }).join("");
+
+  $main.innerHTML = `
+    <div class="lede">
+      日本の上位<b>${esc(sparky.scanned ?? "?")}</b>人を調べて、直近の対戦の
+      <b>${Math.round((sparky.threshold ?? 0.5) * 100)}%以上</b>で
+      ${esc(sparky.card || "スパーキー")}を使っていた<b>${list.length}</b>人。レートの高い順。
+      <br>タップでデッキが見られます。
+    </div>
+    ${list.length ? rows : `<div class="notice">該当する人がいませんでした。</div>`}
+    ${sparky.updatedAt ? `<div class="updated-line" style="margin-top:14px">最終更新 ${esc(ago(sparky.updatedAt))}</div>` : ""}
+  `;
+
+  $main.querySelectorAll("[data-key]").forEach(b => {
+    b.onclick = () => {
+      const k = b.dataset.key;
+      opened.has(k) ? opened.delete(k) : opened.add(k);
+      draw();
+    };
+  });
+}
+
+function draw() {
+  $back.hidden = view === "board";
+  $navSparky.hidden = view !== "board";
+  $crest.textContent = view === "player" ? "PLAYER"
+    : view === "sparky" ? "SPARKY JP" : "CLASH BATTLE LOG";
+  drawTabs();
+  if (view === "player") drawPlayer();
+  else if (view === "sparky") drawSparky();
+  else drawBoard();
+}
+
+$navSparky.onclick = () => openSparky();
 $back.onclick = () => { view = "board"; selectedTag = null; opened.clear(); draw(); };
 $refresh.onclick = () => {
-  if (view === "player" && selectedTag) { const t = selectedTag; loadBoard().then(() => openPlayer(t)); }
+  if (view === "sparky") { sparky = null; openSparky(); }
+  else if (view === "player" && selectedTag) { const t = selectedTag; loadBoard().then(() => openPlayer(t)); }
   else loadBoard();
 };
 
