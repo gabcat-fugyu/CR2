@@ -399,7 +399,7 @@
   <div class="masthead">
     <span class="crest display" id="crest">CLASH BATTLE LOG</span>
     <span class="masthead-btns">
-      <button class="cr-btn" id="nav-sparky">⚡ 日本</button>
+      <button class="cr-btn" id="nav-sparky">⚡ スパーキー</button>
       <button class="cr-btn" id="back" hidden>← 戻る</button>
     </span>
   </div>
@@ -511,7 +511,7 @@ const CHAOS_COLORS = { 1: "lv1", 2: "lv2", 3: "lv3" };
 
 let index = null, metricId = "rank", view = "board";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
-let sparky = null, sparkyError = false;   // 日本のスパーキー使い
+let sparky = null, sparkyError = false, sparkyRegion = "jp";   // スパーキー使い
 const opened = new Set();  // 展開中の試合・デッキ
 
 const $main = document.getElementById("main");
@@ -894,14 +894,17 @@ function drawPlayer() {
   if (more) more.onclick = () => { shown += PAGE; draw(); };
 }
 
-// ---- 日本のスパーキー使い ----
+// ---- スパーキー使いランキング(日本 / 世界) ----
 async function openSparky() {
   view = "sparky";
   opened.clear();
   draw();
   if (sparky) return;          // 一度読んだら使い回す
   try {
-    sparky = await loadData("sparky.json");
+    const raw = await loadData("sparky.json");
+    // 古い形式(地域分けなし)でも読めるようにしておく
+    sparky = raw.regions ? raw
+      : { ...raw, regions: [{ key: "jp", label: "日本", scanned: raw.scanned, players: raw.players || [] }] };
     sparkyError = false;
   } catch {
     sparkyError = true;
@@ -918,9 +921,19 @@ function drawSparky() {
   }
   if (!sparky) { $main.innerHTML = `<div class="notice">集計を読み込み中…</div>`; return; }
 
-  const list = sparky.players || [];
+  const regions = sparky.regions || [];
+  const region = regions.find(r => r.key === sparkyRegion) || regions[0];
+  if (!region) { $main.innerHTML = `<div class="notice">集計結果がありません。</div>`; return; }
+
+  const switcher = regions.length > 1
+    ? `<div class="tab-rail">${regions.map(r =>
+        `<button class="cr-btn${r.key === region.key ? " on" : ""}" data-region="${esc(r.key)}">${esc(r.label)}</button>`
+      ).join("")}</div>`
+    : "";
+
+  const list = region.players || [];
   const rows = list.map((p) => {
-    const key = "sp:" + clean(p.tag);
+    const key = `sp:${region.key}:${clean(p.tag)}`;
     const isOpen = opened.has(key);
     const cls = p.rank === 1 ? " gold" : p.rank === 2 ? " silver" : p.rank === 3 ? " bronze" : "";
     const deck = { name: p.name, cards: p.deck || [], supportCards: p.supportCards || [] };
@@ -943,8 +956,9 @@ function drawSparky() {
   }).join("");
 
   $main.innerHTML = `
+    ${switcher}
     <div class="lede">
-      日本の上位<b>${esc(sparky.scanned ?? "?")}</b>人を調べて、直近の対戦の
+      ${esc(region.label)}の上位<b>${esc(region.scanned ?? "?")}</b>人のうち、直近の対戦の
       <b>${Math.round((sparky.threshold ?? 0.5) * 100)}%以上</b>で
       ${esc(sparky.card || "スパーキー")}を使っていた<b>${list.length}</b>人。レートの高い順。
       <br>タップでデッキが見られます。
@@ -953,6 +967,9 @@ function drawSparky() {
     ${sparky.updatedAt ? `<div class="updated-line" style="margin-top:14px">最終更新 ${esc(ago(sparky.updatedAt))}</div>` : ""}
   `;
 
+  $main.querySelectorAll("[data-region]").forEach(b => {
+    b.onclick = () => { sparkyRegion = b.dataset.region; opened.clear(); draw(); };
+  });
   $main.querySelectorAll("[data-key]").forEach(b => {
     b.onclick = () => {
       const k = b.dataset.key;
@@ -966,7 +983,7 @@ function draw() {
   $back.hidden = view === "board";
   $navSparky.hidden = view !== "board";
   $crest.textContent = view === "player" ? "PLAYER"
-    : view === "sparky" ? "SPARKY JP" : "CLASH BATTLE LOG";
+    : view === "sparky" ? "SPARKY RANKING" : "CLASH BATTLE LOG";
   drawTabs();
   if (view === "player") drawPlayer();
   else if (view === "sparky") drawSparky();
