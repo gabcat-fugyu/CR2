@@ -36,8 +36,16 @@ JST = timezone(timedelta(hours=9))
 # 環境変数で上書きできるようにしておく。
 KEEP_BATTLE_DAYS = int(os.environ.get("KEEP_BATTLE_DAYS", "180"))   # 対戦履歴を残す日数
 MAX_BATTLES = int(os.environ.get("MAX_BATTLES", "3000"))            # 1人あたりの上限試合数
-FULL_TROPHY_DAYS = int(os.environ.get("FULL_TROPHY_DAYS", "30"))    # レート推移を全点残す日数
-KEEP_TROPHY_DAYS = int(os.environ.get("KEEP_TROPHY_DAYS", "365"))   # それ以前は1日1点にして残す日数
+# レート推移はシーズンが変わるたびに捨てるので、シーズン内(最長5週ほど)は
+# 全部残しておける。念のため上限だけ持たせる。
+FULL_TROPHY_DAYS = int(os.environ.get("FULL_TROPHY_DAYS", "45"))    # レート推移を全点残す日数
+KEEP_TROPHY_DAYS = int(os.environ.get("KEEP_TROPHY_DAYS", "60"))    # それ以前は1日1点にして残す日数
+
+# ---- シーズンの区切り ----
+# クラロワのシーズンは「第1月曜の17時ごろ」から次の第1月曜まで。
+# ここが変わるとレートがリセットされ、全員マスターIから始まる。
+SEASON_RESET_HOUR = int(os.environ.get("SEASON_RESET_HOUR", "17"))
+RESET_LEAGUE = 1  # リセット後のリーグ = マスターI
 
 ROOT = Path(__file__).parent
 PLAYERS_FILE = ROOT / "players.json"
@@ -171,6 +179,39 @@ def battle_result(battle: dict, tag: str):
     return my_crowns > opp_crowns
 
 
+def season_start(year: int, month: int) -> datetime:
+    """その月のシーズン開始時刻(第1月曜の17時 日本時間)を返す。"""
+    d = datetime(year, month, 1, tzinfo=JST)
+    while d.weekday() != 0:  # 0 = 月曜
+        d += timedelta(days=1)
+    return d.replace(hour=SEASON_RESET_HOUR)
+
+
+def season_key(now: datetime = None) -> str:
+    """今がどのシーズンかを "YYYY-MM" で返す。"""
+    now = (now or datetime.now(timezone.utc)).astimezone(JST)
+    if now < season_start(now.year, now.month):
+        # まだ今月のシーズンが始まっていない = 先月のシーズンの続き
+        y, m = (now.year - 1, 12) if now.month == 1 else (now.year, now.month - 1)
+        return f"{y:04d}-{m:02d}"
+    return f"{now.year:04d}-{now.month:02d}"
+
+
+def looks_stale(pol: dict, player: dict, pending: dict) -> bool:
+    """シーズンが変わったのに、APIがまだ前シーズンの値を返しているか。
+
+    リセット直前の値と完全に一致していれば、まだ更新されていないとみなす。
+    1試合でもすれば battleCount が動くので、そこで解除される。
+    """
+    if not pending:
+        return False
+    return (
+        pol.get("leagueNumber") == pending.get("leagueNumber")
+        and pol.get("trophies") == pending.get("rating")
+        and player.get("battleCount") == pending.get("battleCount")
+    )
+
+
 def period_stats(history, tag: str):
     """今日/3日/7日それぞれの試合数と勝率を集計する。"""
     now = datetime.now(timezone.utc)
@@ -264,12 +305,83 @@ def same_snapshot(a, b):
     return all(a.get(k) == b.get(k) for k in keys)
 
 
-def collect_player(tag: str, label, groups, token: str):
+def probe_leaderboards(token: str):
+    """【一時的な診断】どんなリーダーボードがあるか調べて表示する。
+
+    2v2リーグの順位が取れるか確認したい。公式ドキュメントに載っていなくても
+    実際には返ってくることがあるので、叩いてみる。
+    """
+    print("  ===== リーダーボード診断 =====")
+    data = api_get("/leaderboards", token)
+    if data is None:
+        print("    /leaderboards が取得できませんでした(未対応の可能性)")
+        print("  ==============================")
+        return
+
+    items = data.get("items") or []
+    print(f"    {len(items)}件")
+    for item in items:
+        name = str(item.get("name", ""))
+        mark = " ★2v2かも" if any(h in name.lower() for h in ("2v2", "duo", "2 v 2")) else ""
+        print(f"    id={item.get('id')}  {name}{mark}")
+    print("  ==============================")
+
+
+def probe_fields(player: dict, token: str):
+    """【一時的な診断】2v2リーグのデータがAPIのどこにあるか調べる。
+
+    1人目のときだけ呼ばれる。分かったらこの関数と呼び出しは消してよい。
+    """
+    print("  ===== 2v2の調査(1人目のみ) =====")
+
+    # --- プレイヤー情報に2v2用のフィールドがあるか ---
+    print("  [1] プレイヤー情報のキー:")
+    for k in sorted(player.keys()):
+        v = player[k]
+        kind = type(v).__name__
+        if isinstance(v, list):
+            kind = f"list[{len(v)}]"
+        elif isinstance(v, dict):
+            kind = f"dict{sorted(v.keys())}"
+        print(f"      {k} : {kind}")
+
+    hints = ("duo", "2v2", "two", "rating", "league", "season", "rank", "elo")
+    print("  [2] それらしいキーの中身:")
+    found = False
+    for k, v in player.items():
+        if k in ("badges", "cards", "supportCards", "currentDeck", "achievements"):
+            continue  # 数が多いので飛ばす
+        if any(h in k.lower() for h in hints):
+            print(f"      {k} = {json.dumps(v, ensure_ascii=False)[:400]}")
+            found = True
+    if not found:
+        print("      (見当たりませんでした)")
+
+    # --- リーダーボードの一覧に2v2があるか ---
+    print("  [3] リーダーボード一覧:")
+    boards = api_get("/leaderboards", token)
+    items = (boards or {}).get("items")
+    if not items:
+        print("      取得できませんでした(未対応か、権限がない可能性)")
+    else:
+        print(f"      全{len(items)}件")
+        for b in items:
+            name = str(b.get("name", ""))
+            mark = "  ★" if any(h in name.lower() for h in ("2v2", "duo", "ダブル")) else "    "
+            print(f"    {mark}id={b.get('id')} : {name}")
+
+    print("  ================================")
+
+
+def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     """1人分を取得して保存する。結果のサマリを返す。"""
     encoded = f"%23{tag}"
     player = api_get(f"/players/{encoded}", token)
     if player is None:
         return None
+
+    if probe:
+        probe_fields(player, token)
 
     battles = api_get(f"/players/{encoded}/battlelog", token)
     if not isinstance(battles, list):
@@ -297,14 +409,41 @@ def collect_player(tag: str, label, groups, token: str):
     best_pol = player.get("bestPathOfLegendSeasonResult") or {}
     last_pol = player.get("lastPathOfLegendSeasonResult") or {}
 
+    # --- シーズンの切り替わり判定 ---
+    prev = load_json(player_dir / "player.json", {}) or {}
+    current_season = season_key(now)
+    changed = bool(prev.get("season")) and prev.get("season") != current_season
+
+    if changed:
+        # 新シーズン。APIが前シーズンの値を返し続けている間は
+        # マスターI・レートなしとして扱う(実際のゲームもリセットされている)
+        pending = {
+            "leagueNumber": prev.get("rawLeagueNumber"),
+            "rating": prev.get("rawRating"),
+            "battleCount": prev.get("battleCount"),
+        }
+        print(f"    シーズン更新: {prev.get('season')} → {current_season} (レート推移をリセット)")
+    else:
+        pending = prev.get("resetPending")
+
+    stale = looks_stale(pol, player, pending)
+    if not stale:
+        pending = None
+
+    # 表示に使う値。まだ前シーズンの値なら マスターI に見せる
+    show_rating = None if stale else pol.get("trophies")
+    show_league = RESET_LEAGUE if stale else pol.get("leagueNumber")
+
     # --- トロフィー/レート推移の記録 ---
-    # 5分おきに走るので、中身が前回と同じなら記録しない(無駄に増やさない)
-    trophies = load_json(player_dir / "trophies.json", [])
+    # 10分おきに走るので、中身が前回と同じなら記録しない(無駄に増やさない)
+    # シーズンが変わったら推移は捨てて、新シーズン分だけ貯め直す
+    trophies = [] if changed else load_json(player_dir / "trophies.json", [])
     snapshot = {
         "time": now.isoformat(timespec="seconds"),
+        "season": current_season,
         "trophies": player.get("trophies"),
-        "rating": pol.get("trophies"),
-        "leagueNumber": pol.get("leagueNumber"),
+        "rating": show_rating,
+        "leagueNumber": show_league,
         "battleCount": player.get("battleCount"),
         "wins": player.get("wins"),
         "losses": player.get("losses"),
@@ -319,10 +458,15 @@ def collect_player(tag: str, label, groups, token: str):
         "name": player.get("name"),
         "label": label or player.get("name"),
         "groups": groups or [],
-        # 天界(パス・オブ・レジェンド)
-        "rating": pol.get("trophies"),
-        "leagueNumber": pol.get("leagueNumber"),
-        "polRank": pol.get("rank"),
+        # 天界(パス・オブ・レジェンド)。表示用の値
+        "rating": show_rating,
+        "leagueNumber": show_league,
+        "polRank": None if stale else pol.get("rank"),
+        # APIが返した生の値と、シーズンの状態
+        "rawRating": pol.get("trophies"),
+        "rawLeagueNumber": pol.get("leagueNumber"),
+        "season": current_season,
+        "resetPending": pending,
         "bestRating": best_pol.get("trophies"),
         "bestLeagueNumber": best_pol.get("leagueNumber"),
         "lastRating": last_pol.get("trophies"),
@@ -401,7 +545,8 @@ def main():
 
     summaries = []
     for i, (tag, label, groups) in enumerate(entries):
-        result = collect_player(tag, label, groups, token)
+        # 1人目だけフィールドの中身を覗く(2v2リーグの調査用。不要になったら消す)
+        result = collect_player(tag, label, groups, token, probe=(i == 0))
         if result:
             summaries.append(result)
         if i < len(entries) - 1:
