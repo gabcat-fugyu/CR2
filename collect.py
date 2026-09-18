@@ -36,6 +36,7 @@ JST = timezone(timedelta(hours=9))
 # 環境変数で上書きできるようにしておく。
 KEEP_BATTLE_DAYS = int(os.environ.get("KEEP_BATTLE_DAYS", "180"))   # 対戦履歴を残す日数
 MAX_BATTLES = int(os.environ.get("MAX_BATTLES", "3000"))            # 1人あたりの上限試合数
+RECENT_BATTLES = int(os.environ.get("RECENT_BATTLES", "100"))       # 画面に出す直近の試合数
 # レート推移はシーズンが変わるたびに捨てるので、シーズン内(最長5週ほど)は
 # 全部残しておける。念のため上限だけ持たせる。
 FULL_TROPHY_DAYS = int(os.environ.get("FULL_TROPHY_DAYS", "45"))    # レート推移を全点残す日数
@@ -252,6 +253,27 @@ def period_stats(history, tag: str):
     return stats
 
 
+def slim_battle(b: dict) -> dict:
+    """集計に必要な部分だけ残す。
+
+    対戦ログはカード1枚ずつに画像URLまで入っていて、そのまま貯めると
+    1人で数MBになる。アプリが重くなるので、履歴は集計に使う項目だけにして、
+    画面に出す直近ぶんだけ別ファイル(recent.json)にフル装備で持たせる。
+    """
+    return {
+        "battleTime": b.get("battleTime"),
+        "type": b.get("type"),
+        "team": [
+            {"tag": p.get("tag"), "crowns": p.get("crowns")}
+            for p in (b.get("team") or [])
+        ],
+        "opponent": [
+            {"name": p.get("name"), "crowns": p.get("crowns")}
+            for p in (b.get("opponent") or [])
+        ],
+    }
+
+
 def prune_battles(battles, now):
     """古すぎる試合と、上限を超えた分を落とす。battlesは新しい順。"""
     cutoff = now - timedelta(days=KEEP_BATTLE_DAYS)
@@ -328,47 +350,47 @@ def probe_leaderboards(token: str):
 
 
 def probe_fields(player: dict, token: str):
-    """【一時的な診断】2v2リーグのデータがAPIのどこにあるか調べる。
+    """【一時的な診断】2v2リーグのレートと順位がどこにあるか調べる。
 
-    1人目のときだけ呼ばれる。分かったらこの関数と呼び出しは消してよい。
+    1回目の調査で分かったこと:
+      - プレイヤー情報の progress に "2v2League_YYYYMM" というキーがある
+      - リーダーボード一覧に "2v2 League" が複数(シーズン別?)ある
+    ここではその中身を覗く。分かったらこの関数と呼び出しは消してよい。
     """
     print("  ===== 2v2の調査(1人目のみ) =====")
 
-    # --- プレイヤー情報に2v2用のフィールドがあるか ---
-    print("  [1] プレイヤー情報のキー:")
-    for k in sorted(player.keys()):
-        v = player[k]
-        kind = type(v).__name__
-        if isinstance(v, list):
-            kind = f"list[{len(v)}]"
-        elif isinstance(v, dict):
-            kind = f"dict{sorted(v.keys())}"
-        print(f"      {k} : {kind}")
-
-    hints = ("duo", "2v2", "two", "rating", "league", "season", "rank", "elo")
-    print("  [2] それらしいキーの中身:")
-    found = False
-    for k, v in player.items():
-        if k in ("badges", "cards", "supportCards", "currentDeck", "achievements"):
-            continue  # 数が多いので飛ばす
-        if any(h in k.lower() for h in hints):
-            print(f"      {k} = {json.dumps(v, ensure_ascii=False)[:400]}")
-            found = True
-    if not found:
-        print("      (見当たりませんでした)")
-
-    # --- リーダーボードの一覧に2v2があるか ---
-    print("  [3] リーダーボード一覧:")
-    boards = api_get("/leaderboards", token)
-    items = (boards or {}).get("items")
-    if not items:
-        print("      取得できませんでした(未対応か、権限がない可能性)")
+    # --- progress の中身をそのまま出す ---
+    print("  [1] progress の中身:")
+    progress = player.get("progress")
+    if isinstance(progress, dict):
+        for k, v in progress.items():
+            label = k if k else "(空のキー)"
+            print(f"      {label} = {json.dumps(v, ensure_ascii=False)[:400]}")
     else:
-        print(f"      全{len(items)}件")
-        for b in items:
-            name = str(b.get("name", ""))
-            mark = "  ★" if any(h in name.lower() for h in ("2v2", "duo", "ダブル")) else "    "
-            print(f"    {mark}id={b.get('id')} : {name}")
+        print(f"      progress が dict ではありません: {type(progress).__name__}")
+
+    # --- 2v2のリーダーボードの中身を見る ---
+    print("  [2] 2v2リーダーボードの中身:")
+    boards = api_get("/leaderboards", token)
+    items = (boards or {}).get("items") or []
+    duo = [b for b in items if "2v2" in str(b.get("name", "")).lower()]
+    if not duo:
+        print("      2v2のリーダーボードが見つかりません")
+    for b in duo:
+        bid = b.get("id")
+        print(f"      --- id={bid} ({b.get('name')}) ---")
+        data = api_get(f"/leaderboards/{bid}?limit=3", token)
+        if not data:
+            print("        取得できませんでした")
+            continue
+        # 一覧以外の項目(シーズン情報など)も見たい
+        meta = {k: v for k, v in data.items() if k != "items"}
+        if meta:
+            print(f"        付随情報: {json.dumps(meta, ensure_ascii=False)[:300]}")
+        entries = data.get("items") or []
+        print(f"        件数(limit=3で取得): {len(entries)}")
+        for e in entries[:3]:
+            print(f"        {json.dumps(e, ensure_ascii=False)[:300]}")
 
     print("  ================================")
 
@@ -390,12 +412,31 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     player_dir = DATA_DIR / tag
 
     # --- 対戦履歴のマージ ---
+    # history.json は集計用(中身は最小限)、recent.json は画面用(フル装備)
     history = load_json(player_dir / "history.json", [])
+    recent = load_json(player_dir / "recent.json", [])
     known = {battle_key(b) for b in history}
     additions = [b for b in battles if battle_key(b) not in known]
 
-    merged = additions + history
-    merged.sort(key=lambda b: b.get("battleTime", ""), reverse=True)
+    by_time = lambda b: b.get("battleTime", "")
+
+    # 集計用は全部まとめて最小限に
+    merged = [slim_battle(b) for b in additions] + [slim_battle(b) for b in history]
+    merged.sort(key=by_time, reverse=True)
+
+    # 画面用は、デッキが入っているものを集めて上から切る。
+    # 以前フル装備で貯めていた history からも拾えるので、
+    # この仕組みに切り替えた直後でも直近ぶんは埋まる。
+    def has_cards(b):
+        team = b.get("team") or []
+        return bool(team and team[0].get("cards"))
+
+    pool = {}
+    for b in list(recent) + [b for b in history if has_cards(b)] + additions:
+        k = battle_key(b)
+        if k not in pool or (not has_cards(pool[k]) and has_cards(b)):
+            pool[k] = b
+    merged_recent = sorted(pool.values(), key=by_time, reverse=True)[:RECENT_BATTLES]
 
     now = datetime.now(timezone.utc)
 
@@ -438,6 +479,12 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     # 10分おきに走るので、中身が前回と同じなら記録しない(無駄に増やさない)
     # シーズンが変わったら推移は捨てて、新シーズン分だけ貯め直す
     trophies = [] if changed else load_json(player_dir / "trophies.json", [])
+    # 前シーズンの記録は落とす。シーズンの印が無い古い記録もここで消える
+    # (途中からこの仕組みを入れたので、初回だけまとめて片付く)
+    before_trim = len(trophies)
+    trophies = [t for t in trophies if t.get("season") == current_season]
+    if before_trim and not trophies:
+        print(f"    前シーズンの推移 {before_trim}点を片付けました")
     snapshot = {
         "time": now.isoformat(timespec="seconds"),
         "season": current_season,
@@ -484,6 +531,9 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
         "periods": period_stats(merged, tag),
     }
 
+    # 画面用: 直近だけフル装備(デッキやスターレベルも入る)
+    save_json(player_dir / "recent.json", merged_recent)
+    # 集計用: 全期間だが中身は最小限
     save_json(player_dir / "history.json", merged)
     save_json(player_dir / "trophies.json", trophies)
     save_json(player_dir / "player.json", summary)
