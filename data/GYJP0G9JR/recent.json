@@ -1,5 +1,65 @@
 [
   {
+    "type": "trail",
+    "battleTime": "20260922T002054.000Z",
+    "isLadderTournament": false,
+    "eventTag": "#2C9J9YRL",
+    "arena": {
+      "id": 54000139,
+      "name": "Legendary Arena",
+      "rawName": "Arena_AllRandom_Princess"
+    },
+    "gameMode": {
+      "id": 72000519,
+      "name": "All_Random_Princess_Friendly"
+    },
+    "deckSelection": "unknown",
+    "team": [
+      {
+        "tag": "#GYJP0G9JR",
+        "name": "SMAP",
+        "trophyChange": 1,
+        "crowns": 1,
+        "kingTowerHitPoints": 0,
+        "princessTowersHitPoints": [
+          317,
+          982
+        ],
+        "clan": {
+          "tag": "#GJ8CU9P8",
+          "name": "Smash Brothers",
+          "badgeId": 16000033
+        },
+        "cards": [],
+        "supportCards": [],
+        "globalRank": null,
+        "elixirLeaked": 7.29
+      }
+    ],
+    "opponent": [
+      {
+        "tag": "#2J00G0Q9Q",
+        "name": "THE BEAST",
+        "crowns": 0,
+        "kingTowerHitPoints": 0,
+        "princessTowersHitPoints": [
+          982
+        ],
+        "clan": {
+          "tag": "#QVJJUQ00",
+          "name": "munchers",
+          "badgeId": 16000003
+        },
+        "cards": [],
+        "supportCards": [],
+        "globalRank": null,
+        "elixirLeaked": 4.39
+      }
+    ],
+    "isHostedMatch": false,
+    "leagueNumber": 1
+  },
+  {
     "type": "pathOfLegend",
     "battleTime": "20260921T165743.000Z",
     "isLadderTournament": false,
@@ -49159,304 +49219,6 @@
         ],
         "globalRank": null,
         "elixirLeaked": 1.24
-      }
-    ],
-    "isHostedMatch": false,
-    "leagueNumber": 7
-  },
-  {
-    "type": "pathOfLegend",
-    "battleTime": "20260918T155416.000Z",
-    "isLadderTournament": false,
-    "arena": {
-      "id": 54000159,
-      "name": "Legendary Arena",
-      "rawName": "Arena_minionacademy"
-    },
-    "gameMode": {
-      "id": 72000464,
-      "name": "Ranked1v1_NewArena2"
-    },
-    "deckSelection": "collection",
-    "team": [
-      {
-        "tag": "#GYJP0G9JR",
-        "name": "SMAP",
-        "startingTrophies": 1918,
-        "trophyChange": 30,
-        "crowns": 3,
-        "kingTowerHitPoints": 7728,
-        "princessTowersHitPoints": [
-          4435,
-          4858
-        ],
-        "clan": {
-          "tag": "#GJ8CU9P8",
-          "name": "Smash Brothers",
-          "badgeId": 16000033
-        },
-        "cards": [
-          {
-            "name": "Elite Barbarians",
-            "id": 26000043,
-            "level": 16,
-            "starLevel": 2,
-            "evolutionLevel": 1,
-            "maxLevel": 16,
-            "maxEvolutionLevel": 1,
-            "rarity": "common",
-            "elixirCost": 6,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/C88C5JH_F3lLZj6K-tLcMo5DPjrFmvzIb1R2M6xCfTE.png",
-              "evolutionMedium": "https://api-assets.clashroyale.com/cardevolutions/300/C88C5JH_F3lLZj6K-tLcMo5DPjrFmvzIb1R2M6xCfTE.png"
-            }
-          },
-          {
-            "name": "Dark Prince",
-            "id": 26000027,
-            "level": 11,
-            "starLevel": 1,
-            "evolutionLevel": 2,
-            "maxLevel": 11,
-            "maxEvolutionLevel": 2,
-            "rarity": "epic",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/M7fXlrKXHu2IvpSGpk36kXVstslbR08Bbxcy0jQcln8.png",
-              "heroMedium": "https://api-assets.clashroyale.com/cardheroes/300/M7fXlrKXHu2IvpSGpk36kXVstslbR08Bbxcy0jQcln8.png"
-            }
-          },
-          {
-            "name": "Zap",
-            "id": 28000008,
-            "level": 16,
-            "starLevel": 1,
-            "evolutionLevel": 1,
-            "maxLevel": 16,
-            "maxEvolutionLevel": 1,
-            "rarity": "common",
-            "elixirCost": 2,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/7dxh2-yCBy1x44GrBaL29vjqnEEeJXHEAlsi5g6D1eY.png",
-              "evolutionMedium": "https://api-assets.clashroyale.com/cardevolutions/300/7dxh2-yCBy1x44GrBaL29vjqnEEeJXHEAlsi5g6D1eY.png"
-            }
-          },
-          {
-            "name": "Sparky",
-            "id": 26000033,
-            "level": 8,
-            "starLevel": 1,
-            "maxLevel": 8,
-            "rarity": "legendary",
-            "elixirCost": 6,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/2GKMkBrArZXgQxf2ygFjDs4VvGYPbx8F6Lj_68iVhIM.png"
-            }
-          },
-          {
-            "name": "Heal Spirit",
-            "id": 28000016,
-            "level": 14,
-            "starLevel": 1,
-            "maxLevel": 14,
-            "rarity": "rare",
-            "elixirCost": 1,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/GITl06sa2nGRLPvboyXbGEv5E3I-wAwn1Eqa5esggbc.png"
-            }
-          },
-          {
-            "name": "Rage",
-            "id": 28000002,
-            "level": 11,
-            "starLevel": 1,
-            "maxLevel": 11,
-            "rarity": "epic",
-            "elixirCost": 2,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/bGP21OOmcpHMJ5ZA79bHVV2D-NzPtDkvBskCNJb7pg0.png"
-            }
-          },
-          {
-            "name": "Electro Wizard",
-            "id": 26000042,
-            "level": 8,
-            "starLevel": 1,
-            "maxLevel": 8,
-            "rarity": "legendary",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/RsFaHgB3w6vXsTjXdPr3x8l_GbV9TbOUCvIx07prbrQ.png"
-            }
-          },
-          {
-            "name": "Giant",
-            "id": 26000003,
-            "level": 14,
-            "starLevel": 2,
-            "maxLevel": 14,
-            "maxEvolutionLevel": 2,
-            "rarity": "rare",
-            "elixirCost": 5,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/Axr4ox5_b7edmLsoHxBX3vmgijAIibuF6RImTbqLlXE.png",
-              "heroMedium": "https://api-assets.clashroyale.com/cardheroes/300/Axr4ox5_b7edmLsoHxBX3vmgijAIibuF6RImTbqLlXE.png"
-            }
-          }
-        ],
-        "supportCards": [
-          {
-            "name": "Tower Princess",
-            "id": 159000000,
-            "level": 16,
-            "maxLevel": 16,
-            "rarity": "common",
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/Nzo5Gjbh7NG6O3Hyu7ev54Pu5zK7vDMR2fbpGdVsS64.png"
-            }
-          }
-        ],
-        "globalRank": null,
-        "elixirLeaked": 1.01
-      }
-    ],
-    "opponent": [
-      {
-        "tag": "#8PJL2QLJR",
-        "name": "Cab❤️KALJAA",
-        "startingTrophies": 1924,
-        "trophyChange": -30,
-        "crowns": 0,
-        "kingTowerHitPoints": 0,
-        "princessTowersHitPoints": null,
-        "clan": {
-          "tag": "#RJPV0Y0P",
-          "name": "Ts pmo icl",
-          "badgeId": 16000120
-        },
-        "cards": [
-          {
-            "name": "Goblin Cage",
-            "id": 27000012,
-            "level": 14,
-            "starLevel": 3,
-            "evolutionLevel": 1,
-            "maxLevel": 14,
-            "maxEvolutionLevel": 1,
-            "rarity": "rare",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/vD24bBgK4rSq7wx5QEbuqChtPMRFviL_ep76GwQw1yA.png",
-              "evolutionMedium": "https://api-assets.clashroyale.com/cardevolutions/300/vD24bBgK4rSq7wx5QEbuqChtPMRFviL_ep76GwQw1yA.png"
-            }
-          },
-          {
-            "name": "Dark Prince",
-            "id": 26000027,
-            "level": 11,
-            "starLevel": 1,
-            "evolutionLevel": 2,
-            "maxLevel": 11,
-            "maxEvolutionLevel": 2,
-            "rarity": "epic",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/M7fXlrKXHu2IvpSGpk36kXVstslbR08Bbxcy0jQcln8.png",
-              "heroMedium": "https://api-assets.clashroyale.com/cardheroes/300/M7fXlrKXHu2IvpSGpk36kXVstslbR08Bbxcy0jQcln8.png"
-            }
-          },
-          {
-            "name": "Baby Dragon",
-            "id": 26000015,
-            "level": 11,
-            "starLevel": 2,
-            "evolutionLevel": 1,
-            "maxLevel": 11,
-            "maxEvolutionLevel": 1,
-            "rarity": "epic",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/cjC9n4AvEZJ3urkVh-rwBkJ-aRSsydIMqSAV48hAih0.png",
-              "evolutionMedium": "https://api-assets.clashroyale.com/cardevolutions/300/cjC9n4AvEZJ3urkVh-rwBkJ-aRSsydIMqSAV48hAih0.png"
-            }
-          },
-          {
-            "name": "Electro Giant",
-            "id": 26000085,
-            "level": 11,
-            "starLevel": 1,
-            "maxLevel": 11,
-            "rarity": "epic",
-            "elixirCost": 7,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/_uChZkNHAMq6tPb3v6A49xinOe3CnhjstOhG6OZbPYc.png"
-            }
-          },
-          {
-            "name": "Berserker",
-            "id": 26000102,
-            "level": 16,
-            "starLevel": 1,
-            "maxLevel": 16,
-            "maxEvolutionLevel": 2,
-            "rarity": "common",
-            "elixirCost": 2,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/NA6W8S1JBYBlOPwD3dNvJLFvVDKq-UuBs_J3i3ewLFI.png",
-              "heroMedium": "https://api-assets.clashroyale.com/cardheroes/300/NA6W8S1JBYBlOPwD3dNvJLFvVDKq-UuBs_J3i3ewLFI.png"
-            }
-          },
-          {
-            "name": "Lightning",
-            "id": 28000007,
-            "level": 11,
-            "starLevel": 1,
-            "maxLevel": 11,
-            "rarity": "epic",
-            "elixirCost": 6,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/fpnESbYqe5GyZmaVVYe-SEu7tE0Kxh_HZyVigzvLjks.png"
-            }
-          },
-          {
-            "name": "Tornado",
-            "id": 28000012,
-            "level": 11,
-            "starLevel": 1,
-            "maxLevel": 11,
-            "rarity": "epic",
-            "elixirCost": 3,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/QJB-QK1QJHdw4hjpAwVSyZBozc2ZWAR9pQ-SMUyKaT0.png"
-            }
-          },
-          {
-            "name": "Mother Witch",
-            "id": 26000083,
-            "level": 8,
-            "starLevel": 3,
-            "maxLevel": 8,
-            "rarity": "legendary",
-            "elixirCost": 4,
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/fO-Xah8XZkYKaSK9SCp3wnzwxtvIhun9NVY-zzte1Ng.png"
-            }
-          }
-        ],
-        "supportCards": [
-          {
-            "name": "Tower Princess",
-            "id": 159000000,
-            "level": 16,
-            "maxLevel": 16,
-            "rarity": "common",
-            "iconUrls": {
-              "medium": "https://api-assets.clashroyale.com/cards/300/Nzo5Gjbh7NG6O3Hyu7ev54Pu5zK7vDMR2fbpGdVsS64.png"
-            }
-          }
-        ],
-        "globalRank": null,
-        "elixirLeaked": 2.16
       }
     ],
     "isHostedMatch": false,
