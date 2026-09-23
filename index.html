@@ -511,9 +511,7 @@ const PAGE = 20;
 // レート推移グラフの期間
 // よく当たるデッキを数える対象(直近の試合数)
 const MATCHUP_RANGES = [50, 100];
-const MATCHUP_TOP = 5;       // 上位何デッキまで出すか
 const MATCHUP_MIN = 2;       // 何回以上当たったら「よく当たる」とするか
-const CARD_TOP = 8;          // カード別で上位何枚まで出すか
 
 // 主軸(勝ち筋)のカード。APIには区分が無いので手で持たせている。
 // 名前はAPIが返す英語名。新カードが出たらここに足せばよい。
@@ -936,8 +934,7 @@ function frequentDecks(battles, tag, limit) {
   }
   return [...map.values()]
     .filter(e => e.count >= MATCHUP_MIN)
-    .sort((a, b) => b.count - a.count || b.lose - a.lose)
-    .slice(0, MATCHUP_TOP);
+    .sort((a, b) => b.count - a.count || b.lose - a.lose);
 }
 
 // カード単位で数える。1試合に同じカードは1回と数える。
@@ -963,8 +960,7 @@ function frequentCards(battles, tag, limit, pick) {
     }
   }
   const list = [...map.values()]
-    .sort((a, b) => b.count - a.count || b.lose - a.lose)
-    .slice(0, CARD_TOP);
+    .sort((a, b) => b.count - a.count || b.lose - a.lose);
   return { list, total };
 }
 
