@@ -7,7 +7,8 @@
 <title>Clash Battle Log</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- black-translucent だと時計やバッテリーの帯がページに重なって文字が読みにくい -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Battle Log">
 
 <!-- ホーム画面に追加したときのアイコン -->
@@ -62,7 +63,7 @@
     background-attachment: fixed;
   }
 
-  .wrap { max-width: 540px; margin: 0 auto; padding: max(14px, env(safe-area-inset-top)) 12px 90px; }
+  .wrap { max-width: 540px; margin: 0 auto; padding: 14px 12px 90px; }
 
   /* ---- 見出し ---- */
   .display { font-family: 'Mochiy Pop One', sans-serif; font-weight: 400; }
@@ -362,6 +363,46 @@
 
   .deck-empty { font-size: 10.5px; color: var(--ink-dim); padding: 6px 0; }
 
+  /* よく当たるデッキ */
+  .mu {
+    background: linear-gradient(180deg, rgba(26,62,135,0.85), rgba(11,30,72,0.85));
+    border: 2px solid rgba(96,150,235,0.3); border-bottom-width: 3px;
+    border-radius: 12px; padding: 8px 9px 9px; margin-bottom: 8px;
+  }
+  .mu-head { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 6px; }
+  .mu-rank {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    display: grid; place-items: center; font-size: 11px;
+    background: rgba(6,16,40,0.6); color: var(--gold);
+  }
+  .mu-count { font-weight: 800; color: var(--ink); }
+  .mu-record { color: var(--ink-dim); flex: 1; }
+  .mu-record.good { color: #7ee08a; }
+  .mu-record.bad  { color: var(--red-side); }
+  .mu-deck { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
+  .mu-card { border-radius: 4px; overflow: hidden; background: rgba(0,0,0,0.22); }
+  .mu-card img { display: block; width: 100%; aspect-ratio: 302/363; object-fit: cover; }
+
+  /* カード別 */
+  .cs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+  .cs {
+    background: linear-gradient(180deg, rgba(26,62,135,0.85), rgba(11,30,72,0.85));
+    border: 2px solid rgba(96,150,235,0.3); border-bottom-width: 3px;
+    border-radius: 10px; padding: 5px 5px 6px; text-align: center;
+  }
+  .cs-img { position: relative; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.22); }
+  .cs-img img { display: block; width: 100%; aspect-ratio: 302/363; object-fit: cover; }
+  .cs-share {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    font-size: 9px; font-weight: 800; padding: 1px 0;
+    background: rgba(6,16,40,0.82); color: var(--gold-lite);
+  }
+  .cs-count { font-size: 11px; font-weight: 800; margin-top: 4px; }
+  .cs-rate { font-size: 9.5px; color: var(--ink-dim); }
+  .cs-rate.good { color: #7ee08a; }
+  .cs-rate.bad  { color: var(--red-side); }
+  .cs-note { font-size: 9.5px; color: var(--ink-dim); margin: 7px 2px 0; line-height: 1.5; }
+
   .support-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
   .support-cap { font-size: 9.5px; color: var(--ink-dim); flex-shrink: 0; }
   .support-grid { display: flex; gap: 5px; }
@@ -468,6 +509,43 @@ const LEAGUE_IMG = (n) => `./assets/leagues/${LEAGUE_FILES[n]}`;
 const PAGE = 20;
 
 // レート推移グラフの期間
+// よく当たるデッキを数える対象(直近の試合数)
+const MATCHUP_RANGES = [50, 100];
+const MATCHUP_TOP = 5;       // 上位何デッキまで出すか
+const MATCHUP_MIN = 2;       // 何回以上当たったら「よく当たる」とするか
+const CARD_TOP = 8;          // カード別で上位何枚まで出すか
+
+// 主軸(勝ち筋)のカード。APIには区分が無いので手で持たせている。
+// 名前はAPIが返す英語名。新カードが出たらここに足せばよい。
+const WIN_CONDITIONS = new Set([
+  "Hog Rider", "Royal Giant", "Giant", "Golem", "Lava Hound", "Balloon",
+  "X-Bow", "Mortar", "Graveyard", "Miner", "Goblin Barrel", "Ram Rider",
+  "Battle Ram", "Royal Hogs", "Elixir Golem", "Electro Giant", "Goblin Giant",
+  "Giant Skeleton", "Three Musketeers", "Sparky", "Wall Breakers",
+  "Skeleton Barrel", "Goblin Drill", "Mega Knight", "P.E.K.K.A",
+  "Royal Recruits", "Rocket",
+]);
+
+// スペルは カードID が 28 で始まる(APIの決まり)。
+// IDが無いデータのための予備として名前でも持っておく。
+const SPELL_NAMES = new Set([
+  "Fireball", "Zap", "Arrows", "The Log", "Poison", "Rocket", "Lightning",
+  "Freeze", "Rage", "Mirror", "Clone", "Tornado", "Earthquake",
+  "Barbarian Barrel", "Giant Snowball", "Royal Delivery", "Graveyard",
+  "Goblin Barrel", "Void", "Goblin Curse",
+]);
+const isSpell = (c) => typeof c.id === "number"
+  ? String(c.id).startsWith("28")
+  : SPELL_NAMES.has(c.name);
+const isWinCondition = (c) => WIN_CONDITIONS.has(c.name);
+
+// よく当たるデッキの表示切替
+const MATCHUP_VIEWS = [
+  { id: "deck",  label: "デッキ" },
+  { id: "win",   label: "主軸" },
+  { id: "spell", label: "スペル" },
+];
+
 const CHART_RANGES = [
   { id: "d1", label: "1日", days: 1 },
   { id: "d7", label: "1週間", days: 7 },
@@ -526,6 +604,8 @@ const CHAOS_COLORS = { 1: "lv1", 2: "lv2", 3: "lv3" };
 let index = null, metricId = "rank", view = "board", groupFilter = "ALL";
 let selectedTag = null, history = [], trophyLog = [], shown = PAGE;
 let chartRange = "all";
+let matchupRange = 50;
+let matchupView = "deck";
 const opened = new Set();  // 展開中の試合・デッキ
 
 const $main = document.getElementById("main");
@@ -836,6 +916,134 @@ function deckHtml(player, who, chaos) {
     ${chaosBox(chaos, player)}`;
 }
 
+// ---- よく当たるデッキ ----
+// 相手のデッキをカード8枚の組み合わせで数える。
+// 並び順は人によって違うので、名前を並べ替えたものを同じデッキの目印にする。
+function frequentDecks(battles, tag, limit) {
+  const map = new Map();
+  for (const b of battles.slice(0, limit)) {
+    const opp = (b.opponent || [])[0];
+    const cards = opp?.cards || [];
+    if (cards.length < 8) continue;          // 2v2などデッキが揃っていないものは除く
+    const key = cards.map(c => c.name).sort().join("|");
+    const me = (b.team || []).find(x => clean(x.tag) === tag) || (b.team || [])[0] || {};
+    const mc = me.crowns ?? 0, oc = opp.crowns ?? 0;
+    let e = map.get(key);
+    if (!e) { e = { cards, count: 0, win: 0, lose: 0 }; map.set(key, e); }
+    e.count++;
+    if (mc > oc) e.win++;
+    else if (mc < oc) e.lose++;
+  }
+  return [...map.values()]
+    .filter(e => e.count >= MATCHUP_MIN)
+    .sort((a, b) => b.count - a.count || b.lose - a.lose)
+    .slice(0, MATCHUP_TOP);
+}
+
+// カード単位で数える。1試合に同じカードは1回と数える。
+function frequentCards(battles, tag, limit, pick) {
+  const map = new Map();
+  let total = 0;
+  for (const b of battles.slice(0, limit)) {
+    const opp = (b.opponent || [])[0];
+    const cards = opp?.cards || [];
+    if (cards.length < 8) continue;
+    total++;
+    const me = (b.team || []).find(x => clean(x.tag) === tag) || (b.team || [])[0] || {};
+    const mc = me.crowns ?? 0, oc = opp.crowns ?? 0;
+    const seen = new Set();
+    for (const c of cards) {
+      if (!pick(c) || seen.has(c.name)) continue;
+      seen.add(c.name);
+      let e = map.get(c.name);
+      if (!e) { e = { card: c, count: 0, win: 0, lose: 0 }; map.set(c.name, e); }
+      e.count++;
+      if (mc > oc) e.win++;
+      else if (mc < oc) e.lose++;
+    }
+  }
+  const list = [...map.values()]
+    .sort((a, b) => b.count - a.count || b.lose - a.lose)
+    .slice(0, CARD_TOP);
+  return { list, total };
+}
+
+function cardStatsHtml(tag, pick, emptyWord) {
+  const { list, total } = frequentCards(history, tag, matchupRange, pick);
+  if (!list.length) {
+    return `<div class="notice" style="padding:22px 8px">直近の対戦に${emptyWord}がありません</div>`;
+  }
+  return `<div class="cs-grid">${list.map(e => {
+    const decided = e.win + e.lose;
+    const rate = decided ? Math.round(e.win / decided * 100) : null;
+    const tone = rate == null ? "" : rate >= 50 ? " good" : " bad";
+    const share = total ? Math.round(e.count / total * 100) : 0;
+    const url = e.card.iconUrls?.medium || "";
+    return `<div class="cs">
+      <div class="cs-img">${url ? `<img src="${esc(url)}" alt="${esc(e.card.name || "")}" loading="lazy">` : ""}
+        <span class="cs-share">${share}%</span></div>
+      <div class="cs-count">${e.count}回</div>
+      <div class="cs-rate${tone}">${rate != null ? `勝率${rate}%` : "—"}</div>
+    </div>`;
+  }).join("")}</div>
+  <div class="cs-note">%は直近${total}試合のうち相手のデッキに入っていた割合。勝率はそのカード相手の自分の勝率</div>`;
+}
+
+function matchupHtml(tag) {
+  const counted = Math.min(matchupRange, history.length);
+  const list = frequentDecks(history, tag, matchupRange);
+
+  const rows = list.map((e, i) => {
+    const decided = e.win + e.lose;
+    const rate = decided ? Math.round(e.win / decided * 100) : null;
+    const tone = rate == null ? "" : rate >= 50 ? " good" : " bad";
+    const costs = e.cards.map(c => c.elixirCost).filter(v => typeof v === "number");
+    const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length).toFixed(1) : null;
+    return `<div class="mu">
+      <div class="mu-head">
+        <span class="mu-rank display">${i + 1}</span>
+        <span class="mu-count">${e.count}回</span>
+        <span class="mu-record${tone}">${e.win}勝${e.lose}敗${rate != null ? ` · 勝率${rate}%` : ""}</span>
+        ${avg ? `<span class="avg">${DROP} ${avg}</span>` : ""}
+      </div>
+      <div class="mu-deck">${e.cards.map(c => {
+        const url = c.iconUrls?.medium || "";
+        return `<div class="mu-card">${url ? `<img src="${esc(url)}" alt="${esc(c.name || "")}" loading="lazy">` : ""}</div>`;
+      }).join("")}</div>
+    </div>`;
+  }).join("");
+
+  const deckBody = list.length
+    ? rows
+    : `<div class="notice" style="padding:22px 8px">
+        直近${counted}試合で${MATCHUP_MIN}回以上当たったデッキはありません</div>`;
+
+  let body;
+  if (history.length === 0) {
+    body = `<div class="notice" style="padding:22px 8px">読み込み中…</div>`;
+  } else if (matchupView === "win") {
+    body = cardStatsHtml(tag, isWinCondition, "主軸カード");
+  } else if (matchupView === "spell") {
+    body = cardStatsHtml(tag, isSpell, "スペル");
+  } else {
+    body = deckBody;
+  }
+
+  return `
+    <div class="sect">
+      <span class="sect-title display">よく当たる相手</span>
+      <span class="sect-note">直近${counted}試合</span>
+    </div>
+    <div class="tab-rail sub" style="margin:0 0 6px">${MATCHUP_VIEWS.map(v =>
+      `<button class="cr-btn${v.id === matchupView ? " on" : ""}" data-mv="${v.id}">${esc(v.label)}</button>`
+    ).join("")}</div>
+    <div class="tab-rail sub" style="margin:0 0 10px">${MATCHUP_RANGES.map(n =>
+      `<button class="cr-btn${n === matchupRange ? " on" : ""}" data-mu="${n}">${n}試合</button>`
+    ).join("")}</div>
+    ${body}
+  `;
+}
+
 // ---- 選手ページ ----
 function drawPlayer() {
   const p = (index?.players || []).find(x => clean(x.tag) === selectedTag);
@@ -945,6 +1153,8 @@ function drawPlayer() {
         : `<div class="notice" style="padding:22px 8px">この期間の動きはまだありません</div>`}
     </div>
 
+    ${matchupHtml(selectedTag)}
+
     <div class="sect">
       <span class="sect-title display">対戦履歴</span>
       <span class="sect-note">直近${history.length}試合 · タップでデッキ</span>
@@ -960,6 +1170,12 @@ function drawPlayer() {
       opened.has(k) ? opened.delete(k) : opened.add(k);
       draw();
     };
+  });
+  $main.querySelectorAll("[data-mv]").forEach(b => {
+    b.onclick = () => { matchupView = b.dataset.mv; draw(); };
+  });
+  $main.querySelectorAll("[data-mu]").forEach(b => {
+    b.onclick = () => { matchupRange = Number(b.dataset.mu); draw(); };
   });
   $main.querySelectorAll("[data-range]").forEach(b => {
     b.onclick = () => { chartRange = b.dataset.range; draw(); };
