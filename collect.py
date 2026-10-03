@@ -43,9 +43,9 @@ FULL_TROPHY_DAYS = int(os.environ.get("FULL_TROPHY_DAYS", "45"))    # レート�
 KEEP_TROPHY_DAYS = int(os.environ.get("KEEP_TROPHY_DAYS", "60"))    # それ以前は1日1点にして残す日数
 
 # ---- シーズンの区切り ----
-# クラロワのシーズンは「第1月曜の17時ごろ」から次の第1月曜まで。
+# クラロワのシーズンは「第1月曜の18時」から次の第1月曜まで。
 # ここが変わるとレートがリセットされ、全員マスターIから始まる。
-SEASON_RESET_HOUR = int(os.environ.get("SEASON_RESET_HOUR", "17"))
+SEASON_RESET_HOUR = int(os.environ.get("SEASON_RESET_HOUR", "18"))
 RESET_LEAGUE = 1  # リセット後のリーグ = マスターI
 
 ROOT = Path(__file__).parent
@@ -76,8 +76,29 @@ def inspect_token(token: str):
     print("--------------------")
 
 
+RETRIES = 3          # 一時的な失敗(混雑・通信エラー)は数回やり直す
+RETRY_WAIT = 3       # やり直すまでの秒数(回数に応じて伸ばす)
+
+
 def api_get(path: str, token: str):
-    """APIを叩いてJSONを返す。取得できなければ None。"""
+    """APIを叩いてJSONを返す。取得できなければ None。
+
+    中継サーバーはたまに 429 / 5xx / タイムアウトを返す。
+    そのまま諦めるとその人がランキングから消えるので、少し待ってやり直す。
+    """
+    for attempt in range(1, RETRIES + 1):
+        result, retry = _api_get_once(path, token)
+        if not retry:
+            return result
+        if attempt < RETRIES:
+            wait = RETRY_WAIT * attempt
+            print(f"    {wait}秒待ってやり直します ({attempt}/{RETRIES - 1})", file=sys.stderr)
+            time.sleep(wait)
+    return None
+
+
+def _api_get_once(path: str, token: str):
+    """1回だけ叩く。(結果, やり直すべきか) を返す。"""
     req = urllib.request.Request(
         f"{API_BASE}{path}",
         headers={
@@ -96,7 +117,7 @@ def api_get(path: str, token: str):
     )
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
-            return json.loads(res.read().decode("utf-8"))
+            return json.loads(res.read().decode("utf-8")), False
     except urllib.error.HTTPError as e:
         body = ""
         try:
@@ -115,15 +136,22 @@ def api_get(path: str, token: str):
             )
         if e.code == 404:
             print(f"  スキップ: タグが見つかりません ({path})", file=sys.stderr)
-            return None
+            return None, False
         if e.code == 429:
-            print("  スキップ: レート制限に達しました", file=sys.stderr)
-            return None
-        print(f"  スキップ: APIエラー {e.code} ({path}) / 返答: {body[:200]}", file=sys.stderr)
-        return None
+            print(f"  失敗: レート制限 ({path})", file=sys.stderr)
+            return None, True
+        print(f"  失敗: APIエラー {e.code} ({path}) / 返答: {body[:200]}", file=sys.stderr)
+        return None, e.code >= 500
     except urllib.error.URLError as e:
-        print(f"  スキップ: 通信エラー {e.reason} ({path})", file=sys.stderr)
-        return None
+        print(f"  失敗: 通信エラー {e.reason} ({path})", file=sys.stderr)
+        return None, True
+    except (TimeoutError, ConnectionError, OSError) as e:
+        # 読み込み途中のタイムアウトは URLError にならず素で飛んでくる
+        print(f"  失敗: 通信エラー {type(e).__name__} ({path})", file=sys.stderr)
+        return None, True
+    except json.JSONDecodeError:
+        print(f"  失敗: 返答がJSONではありません ({path})", file=sys.stderr)
+        return None, True
 
 
 def load_json(path: Path, default):
@@ -181,7 +209,7 @@ def battle_result(battle: dict, tag: str):
 
 
 def season_start(year: int, month: int) -> datetime:
-    """その月のシーズン開始時刻(第1月曜の17時 日本時間)を返す。"""
+    """その月のシーズン開始時刻(第1月曜の18時 日本時間)を返す。"""
     d = datetime(year, month, 1, tzinfo=JST)
     while d.weekday() != 0:  # 0 = 月曜
         d += timedelta(days=1)
@@ -546,6 +574,19 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     return summary
 
 
+def previous_summary(tag: str, label, groups):
+    """前回保存した player.json を返す。今回取れなかった人の代わりに使う。"""
+    prev = load_json(DATA_DIR / tag / "player.json", None)
+    if not isinstance(prev, dict) or not prev.get("tag"):
+        print(f"  {label or tag}: 取得できず、前回の記録もありません", file=sys.stderr)
+        return None
+    # 表示名やグループは players.json の最新に合わせる
+    prev["label"] = label or prev.get("label") or prev.get("name")
+    prev["groups"] = groups or []
+    print(f"  {prev['label']}: 取得できなかったので前回の結果を表示します", file=sys.stderr)
+    return prev
+
+
 def read_players():
     """players.json から追跡対象を読む。[(タグ, 表示名, グループ一覧), ...] を返す。
 
@@ -594,9 +635,19 @@ def main():
     print(f"{len(entries)}人分を取得します")
 
     summaries = []
+    failed = 0
     for i, (tag, label, groups) in enumerate(entries):
         # 1人目だけフィールドの中身を覗く(2v2リーグの調査用。不要になったら消す)
-        result = collect_player(tag, label, groups, token, probe=(i == 0))
+        try:
+            result = collect_player(tag, label, groups, token, probe=(i == 0))
+        except Exception as e:
+            # 1人のエラーで全員分の集計を止めない
+            print(f"  エラー: {label or tag} の処理中に {type(e).__name__}: {e}", file=sys.stderr)
+            result = None
+        if not result:
+            # 取れなかった人は前回の結果で表示を続ける(ランキングから消さない)
+            result = previous_summary(tag, label, groups)
+            failed += 1
         if result:
             summaries.append(result)
         if i < len(entries) - 1:
@@ -618,10 +669,11 @@ def main():
         },
     )
 
-    if not summaries:
+    if failed == len(entries):
         raise SystemExit("1人も取得できませんでした。players.json を確認してください")
 
-    print(f"完了: {len(summaries)}/{len(entries)}人")
+    note = f"(うち{failed}人は取得できず前回の結果を表示)" if failed else ""
+    print(f"完了: {len(summaries)}/{len(entries)}人 {note}")
 
 
 if __name__ == "__main__":
