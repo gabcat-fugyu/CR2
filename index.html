@@ -63,7 +63,14 @@
     background-attachment: fixed;
   }
 
-  .wrap { max-width: 540px; margin: 0 auto; padding: 14px 12px 90px; }
+  /* ノッチ・ステータスバーの下に潜らないよう、端末ごとの安全領域ぶん空ける */
+  .wrap {
+    max-width: 540px; margin: 0 auto;
+    padding: max(14px, calc(env(safe-area-inset-top) + 8px))
+             max(12px, env(safe-area-inset-right))
+             90px
+             max(12px, env(safe-area-inset-left));
+  }
 
   /* ---- 見出し ---- */
   .display { font-family: 'Mochiy Pop One', sans-serif; font-weight: 400; }
