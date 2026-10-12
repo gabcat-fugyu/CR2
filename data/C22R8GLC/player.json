@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:40:55+00:00",
+  "updatedAt": "2026-10-12T22:44:42+00:00",
   "tag": "#C22R8GLC",
   "name": "Ragga Dinosaur™",
   "label": "若旦那",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 1,
       "wins": 1,
-      "winRate": 100.0
+      "losses": 0,
+      "winRate": 100.0,
+      "maxWinStreak": 1,
+      "maxLoseStreak": 0
     },
     "d3": {
       "battles": 57,
       "wins": 46,
-      "winRate": 80.7
+      "losses": 11,
+      "winRate": 80.7,
+      "maxWinStreak": 8,
+      "maxLoseStreak": 2
     },
     "d7": {
       "battles": 78,
       "wins": 65,
-      "winRate": 83.3
+      "losses": 13,
+      "winRate": 83.3,
+      "maxWinStreak": 10,
+      "maxLoseStreak": 2
     }
   }
 }

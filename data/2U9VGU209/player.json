@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:40:58+00:00",
+  "updatedAt": "2026-10-12T22:44:44+00:00",
   "tag": "#2U9VGU209",
   "name": "Schwii✨",
   "label": "Schwii",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 0,
       "wins": 0,
-      "winRate": null
+      "losses": 0,
+      "winRate": null,
+      "maxWinStreak": 0,
+      "maxLoseStreak": 0
     },
     "d3": {
       "battles": 17,
       "wins": 11,
-      "winRate": 64.7
+      "losses": 6,
+      "winRate": 64.7,
+      "maxWinStreak": 6,
+      "maxLoseStreak": 3
     },
     "d7": {
       "battles": 100,
       "wins": 73,
-      "winRate": 73.0
+      "losses": 27,
+      "winRate": 73.0,
+      "maxWinStreak": 12,
+      "maxLoseStreak": 3
     }
   }
 }

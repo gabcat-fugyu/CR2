@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:41:11+00:00",
+  "updatedAt": "2026-10-12T22:44:54+00:00",
   "tag": "#9LCC8GY8Y",
   "name": "moyasi",
   "label": "moyasi",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 0,
       "wins": 0,
-      "winRate": null
+      "losses": 0,
+      "winRate": null,
+      "maxWinStreak": 0,
+      "maxLoseStreak": 0
     },
     "d3": {
       "battles": 324,
       "wins": 174,
-      "winRate": 53.7
+      "losses": 150,
+      "winRate": 53.7,
+      "maxWinStreak": 7,
+      "maxLoseStreak": 5
     },
     "d7": {
       "battles": 521,
       "wins": 272,
-      "winRate": 52.2
+      "losses": 249,
+      "winRate": 52.2,
+      "maxWinStreak": 7,
+      "maxLoseStreak": 6
     }
   }
 }

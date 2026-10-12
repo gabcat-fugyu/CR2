@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:40:51+00:00",
+  "updatedAt": "2026-10-12T22:44:31+00:00",
   "tag": "#PRRRPLQGR",
   "name": "がぶにゃん",
   "label": "がぶにゃん",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 2,
       "wins": 1,
-      "winRate": 50.0
+      "losses": 1,
+      "winRate": 50.0,
+      "maxWinStreak": 1,
+      "maxLoseStreak": 1
     },
     "d3": {
       "battles": 12,
       "wins": 6,
-      "winRate": 50.0
+      "losses": 6,
+      "winRate": 50.0,
+      "maxWinStreak": 2,
+      "maxLoseStreak": 4
     },
     "d7": {
       "battles": 242,
       "wins": 140,
-      "winRate": 57.9
+      "losses": 102,
+      "winRate": 57.9,
+      "maxWinStreak": 7,
+      "maxLoseStreak": 6
     }
   }
 }

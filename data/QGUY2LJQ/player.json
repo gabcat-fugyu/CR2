@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:41:23+00:00",
+  "updatedAt": "2026-10-12T22:45:03+00:00",
   "tag": "#QGUY2LJQ",
   "name": "しゅびさん",
   "label": "しゅびさん",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 0,
       "wins": 0,
-      "winRate": null
+      "losses": 0,
+      "winRate": null,
+      "maxWinStreak": 0,
+      "maxLoseStreak": 0
     },
     "d3": {
       "battles": 3,
       "wins": 1,
-      "winRate": 33.3
+      "losses": 2,
+      "winRate": 33.3,
+      "maxWinStreak": 1,
+      "maxLoseStreak": 1
     },
     "d7": {
       "battles": 3,
       "wins": 1,
-      "winRate": 33.3
+      "losses": 2,
+      "winRate": 33.3,
+      "maxWinStreak": 1,
+      "maxLoseStreak": 1
     }
   }
 }

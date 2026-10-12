@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-10-12T22:41:01+00:00",
+  "updatedAt": "2026-10-12T22:44:46+00:00",
   "tag": "#LJGLG9U2G",
   "name": "太郎",
   "label": "太郎",
@@ -26,17 +26,26 @@
     "today": {
       "battles": 8,
       "wins": 7,
-      "winRate": 87.5
+      "losses": 1,
+      "winRate": 87.5,
+      "maxWinStreak": 6,
+      "maxLoseStreak": 1
     },
     "d3": {
       "battles": 179,
       "wins": 91,
-      "winRate": 50.8
+      "losses": 88,
+      "winRate": 50.8,
+      "maxWinStreak": 6,
+      "maxLoseStreak": 9
     },
     "d7": {
       "battles": 612,
       "wins": 322,
-      "winRate": 52.6
+      "losses": 290,
+      "winRate": 52.6,
+      "maxWinStreak": 8,
+      "maxLoseStreak": 9
     }
   }
 }

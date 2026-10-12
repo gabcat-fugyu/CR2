@@ -1,9 +1,9 @@
 {
-  "updatedAt": "2026-10-12T22:41:29+00:00",
+  "updatedAt": "2026-10-12T22:45:07+00:00",
   "groups": [],
   "players": [
     {
-      "updatedAt": "2026-10-12T22:40:51+00:00",
+      "updatedAt": "2026-10-12T22:44:31+00:00",
       "tag": "#PRRRPLQGR",
       "name": "がぶにゃん",
       "label": "がぶにゃん",
@@ -30,22 +30,31 @@
         "today": {
           "battles": 2,
           "wins": 1,
-          "winRate": 50.0
+          "losses": 1,
+          "winRate": 50.0,
+          "maxWinStreak": 1,
+          "maxLoseStreak": 1
         },
         "d3": {
           "battles": 12,
           "wins": 6,
-          "winRate": 50.0
+          "losses": 6,
+          "winRate": 50.0,
+          "maxWinStreak": 2,
+          "maxLoseStreak": 4
         },
         "d7": {
           "battles": 242,
           "wins": 140,
-          "winRate": 57.9
+          "losses": 102,
+          "winRate": 57.9,
+          "maxWinStreak": 7,
+          "maxLoseStreak": 6
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:40:55+00:00",
+      "updatedAt": "2026-10-12T22:44:42+00:00",
       "tag": "#C22R8GLC",
       "name": "Ragga Dinosaur™",
       "label": "若旦那",
@@ -72,22 +81,31 @@
         "today": {
           "battles": 1,
           "wins": 1,
-          "winRate": 100.0
+          "losses": 0,
+          "winRate": 100.0,
+          "maxWinStreak": 1,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 57,
           "wins": 46,
-          "winRate": 80.7
+          "losses": 11,
+          "winRate": 80.7,
+          "maxWinStreak": 8,
+          "maxLoseStreak": 2
         },
         "d7": {
           "battles": 78,
           "wins": 65,
-          "winRate": 83.3
+          "losses": 13,
+          "winRate": 83.3,
+          "maxWinStreak": 10,
+          "maxLoseStreak": 2
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:40:58+00:00",
+      "updatedAt": "2026-10-12T22:44:44+00:00",
       "tag": "#2U9VGU209",
       "name": "Schwii✨",
       "label": "Schwii",
@@ -114,22 +132,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 17,
           "wins": 11,
-          "winRate": 64.7
+          "losses": 6,
+          "winRate": 64.7,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 3
         },
         "d7": {
           "battles": 100,
           "wins": 73,
-          "winRate": 73.0
+          "losses": 27,
+          "winRate": 73.0,
+          "maxWinStreak": 12,
+          "maxLoseStreak": 3
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:01+00:00",
+      "updatedAt": "2026-10-12T22:44:46+00:00",
       "tag": "#LJGLG9U2G",
       "name": "太郎",
       "label": "太郎",
@@ -156,22 +183,31 @@
         "today": {
           "battles": 8,
           "wins": 7,
-          "winRate": 87.5
+          "losses": 1,
+          "winRate": 87.5,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 1
         },
         "d3": {
           "battles": 179,
           "wins": 91,
-          "winRate": 50.8
+          "losses": 88,
+          "winRate": 50.8,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 9
         },
         "d7": {
           "battles": 612,
           "wins": 322,
-          "winRate": 52.6
+          "losses": 290,
+          "winRate": 52.6,
+          "maxWinStreak": 8,
+          "maxLoseStreak": 9
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:04+00:00",
+      "updatedAt": "2026-10-12T22:44:49+00:00",
       "tag": "#8Q28JQJ9Q",
       "name": "そよかぜ",
       "label": "そよかぜ",
@@ -198,22 +234,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 82,
           "wins": 40,
-          "winRate": 48.8
+          "losses": 42,
+          "winRate": 48.8,
+          "maxWinStreak": 4,
+          "maxLoseStreak": 4
         },
         "d7": {
           "battles": 204,
           "wins": 101,
-          "winRate": 49.5
+          "losses": 103,
+          "winRate": 49.5,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 5
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:07+00:00",
+      "updatedAt": "2026-10-12T22:44:51+00:00",
       "tag": "#9020P09LL",
       "name": "CHE・HONマン",
       "label": "CHE・HONマン",
@@ -231,31 +276,40 @@
       "trophies": 14000,
       "bestTrophies": 14000,
       "arena": "Spirit Square",
-      "battleCount": 22084,
-      "wins": 12297,
+      "battleCount": 22085,
+      "wins": 12298,
       "losses": 9787,
       "clan": "Yes 東京！！",
-      "storedBattles": 1779,
+      "storedBattles": 1780,
       "periods": {
         "today": {
-          "battles": 21,
-          "wins": 16,
-          "winRate": 76.2
+          "battles": 22,
+          "wins": 17,
+          "losses": 5,
+          "winRate": 77.3,
+          "maxWinStreak": 7,
+          "maxLoseStreak": 2
         },
         "d3": {
-          "battles": 35,
-          "wins": 25,
-          "winRate": 71.4
+          "battles": 36,
+          "wins": 26,
+          "losses": 10,
+          "winRate": 72.2,
+          "maxWinStreak": 7,
+          "maxLoseStreak": 2
         },
         "d7": {
-          "battles": 100,
-          "wins": 72,
-          "winRate": 72.0
+          "battles": 101,
+          "wins": 73,
+          "losses": 28,
+          "winRate": 72.3,
+          "maxWinStreak": 18,
+          "maxLoseStreak": 3
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:11+00:00",
+      "updatedAt": "2026-10-12T22:44:54+00:00",
       "tag": "#9LCC8GY8Y",
       "name": "moyasi",
       "label": "moyasi",
@@ -282,22 +336,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 324,
           "wins": 174,
-          "winRate": 53.7
+          "losses": 150,
+          "winRate": 53.7,
+          "maxWinStreak": 7,
+          "maxLoseStreak": 5
         },
         "d7": {
           "battles": 521,
           "wins": 272,
-          "winRate": 52.2
+          "losses": 249,
+          "winRate": 52.2,
+          "maxWinStreak": 7,
+          "maxLoseStreak": 6
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:14+00:00",
+      "updatedAt": "2026-10-12T22:44:56+00:00",
       "tag": "#VGY8CJ0PL",
       "name": "団子三兄弟",
       "label": "団子三兄弟",
@@ -324,22 +387,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 44,
           "wins": 26,
-          "winRate": 59.1
+          "losses": 18,
+          "winRate": 59.1,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 2
         },
         "d7": {
           "battles": 89,
           "wins": 45,
-          "winRate": 50.6
+          "losses": 44,
+          "winRate": 50.6,
+          "maxWinStreak": 6,
+          "maxLoseStreak": 4
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:17+00:00",
+      "updatedAt": "2026-10-12T22:44:58+00:00",
       "tag": "#8RL0LL90Q",
       "name": "GTR V-specⅡ nür",
       "label": "GTR",
@@ -366,22 +438,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 71,
           "wins": 46,
-          "winRate": 64.8
+          "losses": 25,
+          "winRate": 64.8,
+          "maxWinStreak": 10,
+          "maxLoseStreak": 3
         },
         "d7": {
           "battles": 180,
           "wins": 125,
-          "winRate": 69.4
+          "losses": 55,
+          "winRate": 69.4,
+          "maxWinStreak": 10,
+          "maxLoseStreak": 4
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:21+00:00",
+      "updatedAt": "2026-10-12T22:45:00+00:00",
       "tag": "#GYJP0G9JR",
       "name": "SMAP",
       "label": "SMAP",
@@ -408,22 +489,31 @@
         "today": {
           "battles": 15,
           "wins": 14,
-          "winRate": 93.3
+          "losses": 1,
+          "winRate": 93.3,
+          "maxWinStreak": 14,
+          "maxLoseStreak": 1
         },
         "d3": {
           "battles": 21,
           "wins": 20,
-          "winRate": 95.2
+          "losses": 1,
+          "winRate": 95.2,
+          "maxWinStreak": 20,
+          "maxLoseStreak": 1
         },
         "d7": {
           "battles": 21,
           "wins": 20,
-          "winRate": 95.2
+          "losses": 1,
+          "winRate": 95.2,
+          "maxWinStreak": 20,
+          "maxLoseStreak": 1
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:23+00:00",
+      "updatedAt": "2026-10-12T22:45:03+00:00",
       "tag": "#QGUY2LJQ",
       "name": "しゅびさん",
       "label": "しゅびさん",
@@ -450,22 +540,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 3,
           "wins": 1,
-          "winRate": 33.3
+          "losses": 2,
+          "winRate": 33.3,
+          "maxWinStreak": 1,
+          "maxLoseStreak": 1
         },
         "d7": {
           "battles": 3,
           "wins": 1,
-          "winRate": 33.3
+          "losses": 2,
+          "winRate": 33.3,
+          "maxWinStreak": 1,
+          "maxLoseStreak": 1
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:27+00:00",
+      "updatedAt": "2026-10-12T22:45:05+00:00",
       "tag": "#LLUY2C8Y9",
       "name": "月見ダンゴ",
       "label": "月見ダンゴ",
@@ -492,22 +591,31 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 60,
           "wins": 46,
-          "winRate": 76.7
+          "losses": 14,
+          "winRate": 76.7,
+          "maxWinStreak": 19,
+          "maxLoseStreak": 2
         },
         "d7": {
           "battles": 118,
           "wins": 98,
-          "winRate": 83.1
+          "losses": 20,
+          "winRate": 83.1,
+          "maxWinStreak": 30,
+          "maxLoseStreak": 3
         }
       }
     },
     {
-      "updatedAt": "2026-10-12T22:41:29+00:00",
+      "updatedAt": "2026-10-12T22:45:07+00:00",
       "tag": "#VLQ8V22LP",
       "name": "くものなかのあやとり",
       "label": "おこなん",
@@ -538,17 +646,26 @@
         "today": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d3": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         },
         "d7": {
           "battles": 0,
           "wins": 0,
-          "winRate": null
+          "losses": 0,
+          "winRate": null,
+          "maxWinStreak": 0,
+          "maxLoseStreak": 0
         }
       }
     }
