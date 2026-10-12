@@ -47,6 +47,8 @@
      ピンチでの拡大は残るので、見づらい時は指2本で広げられる。
      タップ後の300ms待ちも消えるので、ボタンの反応も速くなる。 */
   html { touch-action: manipulation; }
+  /* hidden を付けた要素は、display を指定していても必ず隠す */
+  [hidden] { display: none !important; }
 
   body {
     margin: 0;
@@ -370,6 +372,19 @@
 
   .deck-empty { font-size: 10.5px; color: var(--ink-dim); padding: 6px 0; }
 
+  /* デッキをクラロワにコピーするボタン */
+  .deck-tools { display: inline-flex; align-items: center; gap: 8px; }
+  .copy-btn {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: inherit; font-size: 10px; font-weight: 800; line-height: 1;
+    color: #3d2600; text-decoration: none; white-space: nowrap;
+    background: linear-gradient(180deg, var(--gold-lite), var(--gold) 55%, #e6a400);
+    border: 1.5px solid var(--gold-deep); border-bottom-width: 3px;
+    border-radius: 8px; padding: 4px 8px;
+  }
+  .copy-btn:active { transform: translateY(1px); border-bottom-width: 1.5px; }
+  .copy-btn svg { width: 10px; height: 10px; fill: currentColor; }
+
   /* よく当たるデッキ */
   .mu {
     background: linear-gradient(180deg, rgba(26,62,135,0.85), rgba(11,30,72,0.85));
@@ -646,6 +661,24 @@ function ago(iso) {
 const CROWN = `<svg viewBox="0 0 20 16" aria-hidden="true"><path d="M1.6 14.4V4.2l4.4 3.3L10 1.2l4 6.3 4.4-3.3v10.2z"/></svg>`;
 const DROP = `<svg viewBox="0 0 10 13" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8.6A5 5 0 0 0 10 8.6C10 5.6 5 0 5 0z"/></svg>`;
 
+// ---- デッキコピー ----
+// クラロワ公式のデッキ共有リンク。開くとゲームが起動してデッキがコピーされる。
+// 並びはそのまま渡すので、進化・ヒーロー枠の位置も保たれる。
+const COPY_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h8a2 2 0 0 1 2 2v8h-2V3H5zM1 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z"/></svg>`;
+function deckCopyUrl(cards, support) {
+  const ids = (cards || []).map(c => c.id).filter(n => typeof n === "number");
+  if (ids.length !== 8) return null;            // 8枚揃っていないものは出さない
+  const tower = (support || []).find(c => typeof c.id === "number");
+  const q = `deck=${ids.join(";")}&l=Royals${tower ? `&tt=${tower.id}` : ""}`;
+  return `https://link.clashroyale.com/en/?clashroyale://copyDeck?${q}`;
+}
+function copyBtn(cards, support) {
+  const url = deckCopyUrl(cards, support);
+  return url
+    ? `<a class="copy-btn" href="${esc(url)}" target="_blank" rel="noopener">${COPY_ICON}コピー</a>`
+    : "";
+}
+
 function crownRow(count, who) {
   let out = "";
   for (let i = 0; i < 3; i++) {
@@ -702,6 +735,8 @@ const METRICS = [
     show: (p) => p.periods?.d3?.winRate != null ? `${p.periods.d3.winRate}<u>%</u>` : "—",
     sub: (p) => `${p.periods?.d3?.battles ?? 0}戦`,
   },
+  streakMetric("d3w-s", "3日の連勝", "d3", "maxWinStreak"),
+  streakMetric("d3l-s", "3日の連敗", "d3", "maxLoseStreak"),
   {
     id: "d7", label: "7日の試合",
     cmp: (a, b) => (b.periods?.d7?.battles ?? 0) - (a.periods?.d7?.battles ?? 0),
@@ -716,7 +751,24 @@ const METRICS = [
     show: (p) => p.periods?.d7?.winRate != null ? `${p.periods.d7.winRate}<u>%</u>` : "—",
     sub: (p) => `${p.periods?.d7?.battles ?? 0}戦`,
   },
+  streakMetric("d7w-s", "7日の連勝", "d7", "maxWinStreak"),
+  streakMetric("d7l-s", "7日の連敗", "d7", "maxLoseStreak"),
 ];
+
+// 期間中の最大連勝・最大連敗。多い順に並べる
+function streakMetric(id, label, period, field) {
+  const val = (p) => p.periods?.[period]?.[field];
+  return {
+    id, label,
+    cmp: (a, b) => (val(b) ?? -1) - (val(a) ?? -1),
+    has: (p) => typeof val(p) === "number" && (p.periods?.[period]?.battles ?? 0) > 0,
+    show: (p) => `${val(p)}<u>${field === "maxWinStreak" ? "連勝" : "連敗"}</u>`,
+    sub: (p) => {
+      const d = p.periods?.[period];
+      return d ? `${d.battles}戦 · ${d.wins}勝${d.losses ?? (d.battles - d.wins)}敗` : "0戦";
+    },
+  };
+}
 
 function rateLine(d) {
   if (!d || d.winRate == null) return `${d?.battles ?? 0}戦`;
@@ -911,7 +963,10 @@ function deckHtml(player, who, chaos) {
   return `
     <div class="deck-head">
       <span class="deck-who ${who}">${who === "me" ? "自分" : esc(player.name || "相手")}</span>
-      ${avg ? `<span class="avg">${DROP} 平均 ${avg}</span>` : ""}
+      <span class="deck-tools">
+        ${avg ? `<span class="avg">${DROP} 平均 ${avg}</span>` : ""}
+        ${copyBtn(cards, support)}
+      </span>
     </div>
     ${cards.length ? `<div class="deck-grid">${slots}</div>` : ""}
     ${support.length ? `<div class="support-row">
@@ -934,7 +989,7 @@ function frequentDecks(battles, tag, limit) {
     const me = (b.team || []).find(x => clean(x.tag) === tag) || (b.team || [])[0] || {};
     const mc = me.crowns ?? 0, oc = opp.crowns ?? 0;
     let e = map.get(key);
-    if (!e) { e = { cards, count: 0, win: 0, lose: 0 }; map.set(key, e); }
+    if (!e) { e = { cards, support: opp.supportCards || [], count: 0, win: 0, lose: 0 }; map.set(key, e); }
     e.count++;
     if (mc > oc) e.win++;
     else if (mc < oc) e.lose++;
@@ -1008,6 +1063,7 @@ function matchupHtml(tag) {
         <span class="mu-count">${e.count}回</span>
         <span class="mu-record${tone}">${e.win}勝${e.lose}敗${rate != null ? ` · 勝率${rate}%` : ""}</span>
         ${avg ? `<span class="avg">${DROP} ${avg}</span>` : ""}
+        ${copyBtn(e.cards, e.support)}
       </div>
       <div class="mu-deck">${e.cards.map(c => {
         const url = c.iconUrls?.medium || "";
@@ -1056,6 +1112,7 @@ function drawPlayer() {
   const tile = (cap, num, color) =>
     `<div class="tile"><div class="tile-num" style="color:${color}">${num}</div><div class="tile-cap">${esc(cap)}</div></div>`;
   const pct = (d) => d?.winRate != null ? `${d.winRate}<u>%</u>` : "—";
+  const streak = (d, f) => typeof d?.[f] === "number" ? d[f] : "—";
 
   const useRate = p.rating != null;
   const allPts = [];
@@ -1138,6 +1195,12 @@ function drawPlayer() {
       ${tile("3日の勝率", pct(per.d3), "var(--blue-side)")}
       ${tile("7日の勝率", pct(per.d7), "var(--blue-side)")}
       ${tile("通算試合", p.battleCount ?? "—", "var(--ink-dim)")}
+    </div>
+    <div class="tiles">
+      ${tile("3日の最大連勝", streak(per.d3, "maxWinStreak"), "var(--blue-side)")}
+      ${tile("3日の最大連敗", streak(per.d3, "maxLoseStreak"), "var(--red-side)")}
+      ${tile("7日の最大連勝", streak(per.d7, "maxWinStreak"), "var(--blue-side)")}
+      ${tile("7日の最大連敗", streak(per.d7, "maxLoseStreak"), "var(--red-side)")}
     </div>
 
     <div class="graph">

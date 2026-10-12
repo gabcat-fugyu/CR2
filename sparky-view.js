@@ -22,6 +22,16 @@ window.SparkyView = (function () {
 
   const DROP = `<svg viewBox="0 0 10 13" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8.6A5 5 0 0 0 10 8.6C10 5.6 5 0 5 0z"/></svg>`;
 
+  // クラロワ公式のデッキ共有リンク。開くとゲームが起動してデッキがコピーされる
+  const COPY_ICON = `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h8a2 2 0 0 1 2 2v8h-2V3H5zM1 5a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2z"/></svg>`;
+  function deckCopyUrl(cards, support) {
+    const ids = (cards || []).map(c => c.id).filter(n => typeof n === "number");
+    if (ids.length !== 8) return null;
+    const tower = (support || []).find(c => typeof c.id === "number");
+    const q = `deck=${ids.join(";")}&l=Royals${tower ? `&tt=${tower.id}` : ""}`;
+    return `https://link.clashroyale.com/en/?clashroyale://copyDeck?${q}`;
+  }
+
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -139,6 +149,17 @@ window.SparkyView = (function () {
   .sv-support-grid { display: flex; gap: 5px; }
   .sv-support-grid .sv-slot { width: 46px; }
   .sv-empty { font-size: 10.5px; color: var(--ink-dim, #a9c0ea); padding: 6px 0; }
+  .sv-tools { display: inline-flex; align-items: center; gap: 8px; }
+  .sv-copy {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: inherit; font-size: 10px; font-weight: 800; line-height: 1;
+    color: #3d2600; text-decoration: none; white-space: nowrap;
+    background: linear-gradient(180deg, var(--gold-lite, #ffe89a), var(--gold, #ffd23f) 55%, #e6a400);
+    border: 1.5px solid var(--gold-deep, #b8790a); border-bottom-width: 3px;
+    border-radius: 8px; padding: 4px 8px;
+  }
+  .sv-copy:active { transform: translateY(1px); border-bottom-width: 1.5px; }
+  .sv-copy svg { width: 10px; height: 10px; fill: currentColor; }
 
   .sv-more {
     width: 100%; margin-top: 4px; padding: 11px;
@@ -214,10 +235,14 @@ window.SparkyView = (function () {
     if (!cards.length && !support.length) return `<div class="sv-empty">デッキ情報なし</div>`;
     const costs = cards.map(c => c.elixirCost).filter(v => typeof v === "number");
     const avg = costs.length ? (costs.reduce((a, b) => a + b, 0) / costs.length).toFixed(1) : null;
+    const copy = deckCopyUrl(cards, support);
     return `
       <div class="sv-deck-head">
         <span class="sv-who">${esc(p.name || "")} のデッキ</span>
-        ${avg ? `<span class="sv-avg">${DROP} 平均 ${avg}</span>` : ""}
+        <span class="sv-tools">
+          ${avg ? `<span class="sv-avg">${DROP} 平均 ${avg}</span>` : ""}
+          ${copy ? `<a class="sv-copy" href="${esc(copy)}" target="_blank" rel="noopener">${COPY_ICON}コピー</a>` : ""}
+        </span>
       </div>
       ${cards.length ? `<div class="sv-grid">${cards.map(cardSlot).join("")}</div>` : ""}
       ${support.length ? `<div class="sv-support">

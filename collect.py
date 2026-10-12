@@ -256,27 +256,49 @@ def period_stats(history, tag: str):
         "d7": now - timedelta(days=7),
     }
 
+    # 連勝・連敗は古い順に並べて数える
+    timed = []
+    for b in history:
+        when = parse_battle_time(b.get("battleTime", ""))
+        if when is not None:
+            timed.append((when, b))
+    timed.sort(key=lambda x: x[0])
+
     stats = {}
     for name, since in windows.items():
         total = 0
         wins = 0
         decided = 0
-        for b in history:
-            when = parse_battle_time(b.get("battleTime", ""))
-            if when is None or when < since:
+        streak_win = streak_lose = 0
+        best_win = best_lose = 0
+        for when, b in timed:
+            if when < since:
                 continue
             total += 1
             result = battle_result(b, tag)
             if result is None:
+                # 引き分けや判定できない試合で連続は途切れる
+                streak_win = streak_lose = 0
                 continue
             decided += 1
             if result:
                 wins += 1
+                streak_win += 1
+                streak_lose = 0
+            else:
+                streak_lose += 1
+                streak_win = 0
+            best_win = max(best_win, streak_win)
+            best_lose = max(best_lose, streak_lose)
         stats[name] = {
             "battles": total,
             "wins": wins,
+            "losses": decided - wins,
             # 引き分けを除いた勝率。判定できる試合が無ければ None
             "winRate": round(wins / decided * 100, 1) if decided else None,
+            # 期間中の最大連勝・最大連敗
+            "maxWinStreak": best_win,
+            "maxLoseStreak": best_lose,
         }
     return stats
 
