@@ -791,6 +791,24 @@ async function loadBoard() {
   }
 }
 
+// recent.json はカードの共通情報(名前・画像・コスト)を1か所にまとめて軽くしてある。
+// 画面ではカードごとに全部入っている方が扱いやすいので、読み込んだら元の形に戻す。
+// 昔の形式(試合の配列そのまま)もそのまま使える。
+function unpackRecent(data) {
+  if (Array.isArray(data)) return data;
+  if (!data || !Array.isArray(data.battles)) return [];
+  const cards = data.cards || {};
+  const fill = (list) => (list || []).map(c => ({ ...(cards[String(c.id)] || {}), ...c }));
+  return data.battles.map(b => {
+    const side = (players) => (players || []).map(pl => ({
+      ...pl,
+      ...(pl.cards ? { cards: fill(pl.cards) } : {}),
+      ...(pl.supportCards ? { supportCards: fill(pl.supportCards) } : {}),
+    }));
+    return { ...b, team: side(b.team), opponent: side(b.opponent) };
+  });
+}
+
 async function openPlayer(tag) {
   selectedTag = tag; view = "player"; shown = PAGE;
   history = []; trophyLog = []; opened.clear();
@@ -800,7 +818,7 @@ async function openPlayer(tag) {
     loadData(`${tag}/trophies.json`).catch(() => []),
   ]);
   if (selectedTag !== tag) return;
-  history = Array.isArray(h) ? h : [];
+  history = unpackRecent(h);
   trophyLog = Array.isArray(t) ? t : [];
   draw();
 }
