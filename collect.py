@@ -165,12 +165,92 @@ def load_json(path: Path, default):
         return default
 
 
-def save_json(path: Path, data):
-    """JSONを整形して書き出す。"""
+def save_json(path: Path, data, compact: bool = True):
+    """JSONを書き出す。
+
+    アプリがスマホで読み込むので、既定では改行や字下げを入れずに詰めて書く
+    (字下げだけでファイルが1.5倍くらいに膨らむ)。
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    text = (
+        json.dumps(data, ensure_ascii=False, separators=(",", ":"))
+        if compact
+        else json.dumps(data, ensure_ascii=False, indent=2)
     )
+    path.write_text(text + "\n", encoding="utf-8")
+
+
+# ---- 画面用の直近ログ(recent.json)の圧縮 ----
+# 対戦ログはカード1枚ごとに名前・画像URL・コストなどが毎回入っていて、
+# 100試合で1MBほどになる。カードごとに変わらない情報は1か所にまとめ、
+# 試合の中にはカードIDとレベルなど試合ごとに変わる値だけを残す。
+CARD_STATIC = ("name", "rarity", "elixirCost", "maxLevel", "maxEvolutionLevel", "iconUrls")
+RECENT_FORMAT = 2
+
+
+def pack_recent(battles):
+    cards = {}
+
+    def pack_list(lst):
+        out = []
+        for c in lst or []:
+            cid = c.get("id")
+            if cid is None:
+                out.append(c)          # IDが無いものはそのまま残す
+                continue
+            entry = cards.setdefault(str(cid), {})
+            for k in CARD_STATIC:
+                if k == "iconUrls":
+                    if c.get("iconUrls"):
+                        entry.setdefault("iconUrls", {}).update(c["iconUrls"])
+                elif k in c and k not in entry:
+                    entry[k] = c[k]
+            out.append({k: v for k, v in c.items() if k not in CARD_STATIC})
+        return out
+
+    packed = []
+    for b in battles:
+        nb = dict(b)
+        for side in ("team", "opponent"):
+            players = []
+            for pl in b.get(side) or []:
+                q = dict(pl)
+                if "cards" in q:
+                    q["cards"] = pack_list(q["cards"])
+                if "supportCards" in q:
+                    q["supportCards"] = pack_list(q["supportCards"])
+                players.append(q)
+            nb[side] = players
+        packed.append(nb)
+    return {"format": RECENT_FORMAT, "cards": cards, "battles": packed}
+
+
+def unpack_recent(data):
+    """pack_recent の逆。昔の形式(試合の配列そのまま)もそのまま読める。"""
+    if isinstance(data, list):
+        return data
+    if not isinstance(data, dict):
+        return []
+    cards = data.get("cards") or {}
+
+    def unpack_list(lst):
+        return [{**cards.get(str(c.get("id")), {}), **c} for c in lst or []]
+
+    battles = []
+    for b in data.get("battles") or []:
+        nb = dict(b)
+        for side in ("team", "opponent"):
+            players = []
+            for pl in b.get(side) or []:
+                q = dict(pl)
+                if "cards" in q:
+                    q["cards"] = unpack_list(q["cards"])
+                if "supportCards" in q:
+                    q["supportCards"] = unpack_list(q["supportCards"])
+                players.append(q)
+            nb[side] = players
+        battles.append(nb)
+    return battles
 
 
 def battle_key(battle: dict) -> str:
@@ -464,7 +544,7 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     # --- 対戦履歴のマージ ---
     # history.json は集計用(中身は最小限)、recent.json は画面用(フル装備)
     history = load_json(player_dir / "history.json", [])
-    recent = load_json(player_dir / "recent.json", [])
+    recent = unpack_recent(load_json(player_dir / "recent.json", []))
     known = {battle_key(b) for b in history}
     additions = [b for b in battles if battle_key(b) not in known]
 
@@ -582,7 +662,7 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     }
 
     # 画面用: 直近だけフル装備(デッキやスターレベルも入る)
-    save_json(player_dir / "recent.json", merged_recent)
+    save_json(player_dir / "recent.json", pack_recent(merged_recent))
     # 集計用: 全期間だが中身は最小限
     save_json(player_dir / "history.json", merged)
     save_json(player_dir / "trophies.json", trophies)
