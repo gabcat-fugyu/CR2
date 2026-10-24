@@ -298,7 +298,8 @@ window.SparkyView = (function () {
         ${esc(r.label)}の上位<b>${esc(r.scanned ?? "?")}</b>人のうち、直近の対戦の
         <b>${Math.round((data.threshold ?? 0.5) * 100)}%以上</b>で
         ${esc(data.card || "スパーキー")}を使っていた<b>${list.length}</b>人。レートの高い順。
-        <br>タップでデッキが見られます。
+        <br>タップでデッキが見られます。${r.stale
+          ? `<br>※今回は${esc(r.label)}のランキングが取得できなかったため、前回の集計を表示しています。` : ""}
       </div>
       ${list.length ? rows : `<div class="sv-notice">該当する人がいませんでした。</div>`}
       ${shown < list.length
