@@ -48,6 +48,16 @@ KEEP_TROPHY_DAYS = int(os.environ.get("KEEP_TROPHY_DAYS", "60"))    # それ以�
 SEASON_RESET_HOUR = int(os.environ.get("SEASON_RESET_HOUR", "18"))
 RESET_LEAGUE = 1  # リセット後のリーグ = マスターI
 
+# ---- 達成バッジ ----
+# イベント(チャレンジ)で目標の勝利数に届いた人に、順位表でバッジを付ける。
+# eventTag は対戦ログに入っているイベントの識別子。
+# 新しいイベントでも出したくなったら、ここに1行足す。
+# 一度達成した人は、その試合が直近のログから消えても達成のまま残る。
+ACHIEVEMENTS = [
+    # 2026年10月 ハロウィンイベント(Shocktober)のチャレンジ
+    {"id": "shocktober-20", "label": "20勝達成", "eventTag": "#2CJUG2VL", "wins": 20},
+]
+
 ROOT = Path(__file__).parent
 PLAYERS_FILE = ROOT / "players.json"
 DATA_DIR = ROOT / "data"
@@ -659,6 +669,9 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
         "storedBattles": len(merged),
         # 期間別集計 (ランキング用)
         "periods": period_stats(merged, tag),
+        # 達成バッジ(イベントの勝利数など)
+        "achievements": update_achievements(
+            prev.get("achievements"), list(battles) + merged_recent, tag, now),
     }
 
     # 画面用: 直近だけフル装備(デッキやスターレベルも入る)
@@ -687,6 +700,42 @@ def previous_summary(tag: str, label, groups):
     prev["groups"] = groups or []
     print(f"  {prev['label']}: 取得できなかったので前回の結果を表示します", file=sys.stderr)
     return prev
+
+
+def event_wins(battles, tag: str, event_tag: str) -> int:
+    """そのイベントで到達した勝利数の最大値。
+
+    イベントの対戦ログでは startingTrophies がそれまでの勝利数、
+    trophyChange が今回の増分(勝ちで+1)になっている。
+    """
+    best = 0
+    for b in battles:
+        if b.get("eventTag") != event_tag:
+            continue
+        team = b.get("team") or []
+        me = next((p for p in team if str(p.get("tag", "")).lstrip("#").upper() == tag),
+                  team[0] if team else {})
+        start = me.get("startingTrophies")
+        if not isinstance(start, int):
+            continue
+        change = me.get("trophyChange") if isinstance(me.get("trophyChange"), int) else 0
+        best = max(best, start + max(change, 0))
+    return best
+
+
+def update_achievements(prev_list, battles, tag: str, now):
+    """前回までの達成に、今回新しく達成したものを足して返す。"""
+    have = {a.get("id"): a for a in (prev_list or []) if isinstance(a, dict)}
+    for a in ACHIEVEMENTS:
+        if a["id"] in have:
+            continue
+        if event_wins(battles, tag, a["eventTag"]) >= a["wins"]:
+            have[a["id"]] = {"id": a["id"], "label": a["label"],
+                             "at": now.isoformat(timespec="seconds")}
+            print(f"    🏆 {a['label']} を達成")
+    # 設定の並び順で返す(設定から消したものも、達成済みなら残す)
+    order = {a["id"]: i for i, a in enumerate(ACHIEVEMENTS)}
+    return sorted(have.values(), key=lambda a: order.get(a["id"], len(order)))
 
 
 def read_players():

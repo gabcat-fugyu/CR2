@@ -179,6 +179,36 @@
     text-shadow: 0 1.5px 0 rgba(4,12,32,0.55);
   }
   .plate-sub { display: block; font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
+  .plate-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .plate-line .plate-name { flex: 0 1 auto; min-width: 0; }
+
+  /* ---- 達成バッジ ---- */
+  .ach {
+    position: relative; overflow: hidden; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 3px;
+    height: 18px; padding: 0 7px 0 4px; border-radius: 6px;
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 9.5px; line-height: 1;
+    color: #fff4c8; white-space: nowrap;
+    text-shadow: 0 1px 0 rgba(70,0,40,0.65);
+    background: linear-gradient(135deg, #6a1bd1 0%, #c81f6e 55%, #ff8a1f 100%);
+    border: 1.5px solid var(--gold);
+    box-shadow: 0 0 10px -2px rgba(255,170,60,0.75), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .ach b { font-weight: normal; }
+  .ach svg { width: 12px; height: 12px; fill: var(--gold-lite); flex-shrink: 0;
+             filter: drop-shadow(0 0 2px rgba(255,220,120,0.9)); }
+  /* ときどき光が走る */
+  .ach::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.6), transparent);
+    transform: skewX(-20deg);
+    animation: ach-shine 3.4s ease-in-out infinite;
+  }
+  @keyframes ach-shine { 0%, 62% { left: -60%; } 100% { left: 130%; } }
+  @media (prefers-reduced-motion: reduce) { .ach::after { display: none; } }
+  .ach.big { height: 26px; padding: 0 11px 0 7px; border-radius: 9px; gap: 5px; font-size: 12px; border-width: 2px; }
+  .ach.big svg { width: 16px; height: 16px; }
+  .ach-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
   .plate-value {
     flex-shrink: 0; text-align: right;
@@ -661,6 +691,15 @@ function ago(iso) {
 const CROWN = `<svg viewBox="0 0 20 16" aria-hidden="true"><path d="M1.6 14.4V4.2l4.4 3.3L10 1.2l4 6.3 4.4-3.3v10.2z"/></svg>`;
 const DROP = `<svg viewBox="0 0 10 13" aria-hidden="true"><path d="M5 0C5 0 0 5.6 0 8.6A5 5 0 0 0 10 8.6C10 5.6 5 0 5 0z"/></svg>`;
 
+// ---- 達成バッジ ----
+// collect.py の ACHIEVEMENTS で決めた目標(イベントの20勝など)を達成した人に付く
+const ACH_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 8.7l7.1-.6z"/></svg>`;
+function achBadges(p, big) {
+  return (p.achievements || []).map(a =>
+    `<span class="ach${big ? " big" : ""}" title="${esc(a.label)}">${ACH_ICON}<b>${esc(a.label)}</b></span>`
+  ).join("");
+}
+
 // ---- デッキコピー ----
 // クラロワ公式のデッキ共有リンク。開くとゲームが起動してデッキがコピーされる。
 // 並びはそのまま渡すので、進化・ヒーロー枠の位置も保たれる。
@@ -878,7 +917,9 @@ function drawBoard() {
       <span class="medal display">${i + 1}</span>
       ${shieldHtml(p.leagueNumber, "shield")}
       <span class="plate-body">
-        <span class="plate-name">${esc(p.label || p.name)}</span>
+        <span class="plate-line">
+          <span class="plate-name">${esc(p.label || p.name)}</span>${achBadges(p)}
+        </span>
         <span class="plate-sub">${esc(m.sub(p))}${
           groupFilter === "ALL" && groupsOf(p).length
             ? ` · ${esc(groupsOf(p).join("/"))}` : ""}</span>
@@ -1193,6 +1234,7 @@ function drawPlayer() {
     <div class="banner">
       <div class="banner-name display outlined">${esc(p.name)}</div>
       ${p.clan ? `<div class="banner-clan">${esc(p.clan)}</div>` : ""}
+      ${(p.achievements || []).length ? `<div class="ach-row">${achBadges(p, true)}</div>` : ""}
       ${shieldHtml(p.leagueNumber, "banner-shield")}
       <div class="banner-league">${esc(leagueName(p.leagueNumber))}</div>
       ${useRate
