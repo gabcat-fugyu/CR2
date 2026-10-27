@@ -53,9 +53,10 @@ RESET_LEAGUE = 1  # リセット後のリーグ = マスターI
 # 判定は次のどちらかで行う(早く分かる方で付く)。
 #   eventTag + wins : 対戦ログのイベント識別子と、その勝利数
 #   badge           : クラロワのプロフィールに付くバッジ名
-# year を書いておくと、選手ページの「過去の20勝」からその年を外す(二重に出さない)。
+# year はチャレンジの年。順位表に出すのは一番新しい年のものだけで、
+#   それより前の年は選手ページの「20勝達成 (2026)」に自動で回る。
+#   来年のチャレンジが始まったら、ここに新しい年の行を1行足すだけでよい。
 # aliases は昔使っていた id。保存済みの達成を引き継ぐ。
-# 新しいチャレンジでも出したくなったら、ここに1行足す。
 # 一度達成した人は、その試合が直近のログから消えても達成のまま残る。
 ACHIEVEMENTS = [
     # CRL 20勝チャレンジ 2026
@@ -716,15 +717,13 @@ def previous_summary(tag: str, label, groups):
 
 
 def past_challenges(badges):
-    """プレイヤーのバッジから、過去の20勝チャレンジ(Crl20Wins2025 など)の年を拾う。
-    今やっている分(ACHIEVEMENTS に year があるもの)は別に出すので除く。"""
-    current = {a.get("year") for a in ACHIEVEMENTS if a.get("year")}
+    """プレイヤーのバッジから、20勝チャレンジ(Crl20Wins2025 など)を達成した年を拾う。
+    今年の分を出すかどうかは画面側で決める(index.json の challengeYear)。"""
     years = []
     for b in badges or []:
         m = re.fullmatch(r"Crl20Wins(\d{4})", str(b.get("name", "")))
         if m and (b.get("progress") is None or b.get("progress", 0) >= 20):
-            if int(m.group(1)) not in current:
-                years.append(int(m.group(1)))
+            years.append(int(m.group(1)))
     return [{"year": y, "label": "20勝達成"} for y in sorted(set(years), reverse=True)]
 
 
@@ -758,12 +757,14 @@ def update_achievements(prev_list, battles, tag: str, now, badges=None):
         for old in a.get("aliases") or []:
             if old in have:
                 have[a["id"]] = {**have.pop(old), "id": a["id"], "label": a["label"]}
+        if a["id"] in have and a.get("year"):
+            have[a["id"]]["year"] = a["year"]
         if a["id"] in have:
             continue
         by_event = bool(a.get("eventTag")) and event_wins(battles, tag, a["eventTag"]) >= a.get("wins", 20)
         by_badge = bool(a.get("badge")) and a["badge"] in badge_names
         if by_event or by_badge:
-            have[a["id"]] = {"id": a["id"], "label": a["label"],
+            have[a["id"]] = {"id": a["id"], "label": a["label"], "year": a.get("year"),
                              "at": now.isoformat(timespec="seconds")}
             print(f"    🏆 {a['label']} を達成")
     # 設定の並び順で返す(設定から消したものも、達成済みなら残す)
@@ -807,7 +808,7 @@ def read_players():
             if isinstance(t, str) and t.strip():
                 titles.append({"label": t.strip()})
             elif isinstance(t, dict) and str(t.get("label", "")).strip():
-                titles.append({k: v for k, v in t.items() if k in ("label", "sub", "replaces", "image")})
+                titles.append({k: v for k, v in t.items() if k in ("label", "sub", "replaces", "image", "year")})
 
         entries.append((tag, item.get("name") or None, groups, titles))
     return entries
@@ -853,11 +854,17 @@ def main():
             if g not in all_groups:
                 all_groups.append(g)
 
+    # 今の20勝チャレンジの年。設定の一番新しい年か、誰かがバッジを持っている一番新しい年
+    years = [a["year"] for a in ACHIEVEMENTS if a.get("year")]
+    years += [c.get("year") for s in summaries for c in s.get("pastChallenges") or []
+              if isinstance(c.get("year"), int)]
+
     save_json(
         INDEX_FILE,
         {
             "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "groups": all_groups,
+            "challengeYear": max(years) if years else None,
             "players": summaries,
         },
     )

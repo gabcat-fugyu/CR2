@@ -768,26 +768,37 @@ const ACH_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2
 const ZAP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 1 3.5 13.6h6.6L8.8 23l11.7-13.4h-7z"/></svg>`;
 
 // 手で付けた特別な称号(players.json の titles)
+// 今の20勝チャレンジの年。これより前の年の達成は「過去の20勝」に回す
+const challengeYear = () => index?.challengeYear ?? null;
+const isCurrent = (x) => x.year == null || challengeYear() == null || x.year === challengeYear();
+
 function legendBadges(p, big) {
-  return (p.titles || []).map(t => big && t.image
+  // 順位表には今の年の称号だけ。選手ページには全部
+  return (p.titles || []).filter(t => big || isCurrent(t)).map(t => big && t.image
     ? `<img class="legend-img" src="${esc(t.image)}" alt="${esc(t.label)}" title="${esc(t.label)}">`
     : `<span class="legend${big ? " big" : ""}" title="${esc(t.label)}">${ZAP_ICON}<span class="legend-text">${
-      t.sub ? `<span class="legend-sub">${esc(t.sub)}</span>` : ""}<b>${esc(t.label)}</b></span></span>`
+      (t.sub || !isCurrent(t))
+        ? `<span class="legend-sub">${esc([t.sub, isCurrent(t) ? null : t.year].filter(Boolean).join(" · "))}</span>`
+        : ""}<b>${esc(t.label)}</b></span></span>`
   ).join("");
 }
 
 // 過去の20勝チャレンジ (2025) など。選手ページだけで使う
 function pastChallenges(p) {
-  const list = p.pastChallenges || [];
+  // プロフィールのバッジで分かった年と、前の年のチャレンジで付いた達成を合わせる
+  const years = new Set();
+  for (const c of p.pastChallenges || []) if (typeof c.year === "number") years.add(c.year);
+  for (const a of p.achievements || []) if (typeof a.year === "number") years.add(a.year);
+  const list = [...years].filter(y => y !== challengeYear()).sort((a, b) => b - a);
   if (!list.length) return "";
-  return `<div class="past-row">${list.map(c =>
-    `<span class="past">${ACH_ICON}${esc(c.label)}<i>(${esc(c.year)})</i></span>`).join("")}</div>`;
+  return `<div class="past-row">${list.map(y =>
+    `<span class="past">${ACH_ICON}20勝達成<i>(${esc(y)})</i></span>`).join("")}</div>`;
 }
 
 function achBadges(p, big) {
   // 特別な称号が代わりになっているものは出さない
   const replaced = new Set((p.titles || []).map(t => t.replaces).filter(Boolean));
-  return (p.achievements || []).filter(a => !replaced.has(a.id)).map(a =>
+  return (p.achievements || []).filter(a => !replaced.has(a.id) && isCurrent(a)).map(a =>
     `<span class="ach${big ? " big" : ""}" title="${esc(a.label)}">${ACH_ICON}<b>${esc(a.label)}</b></span>`
   ).join("");
 }
