@@ -669,6 +669,8 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
         "storedBattles": len(merged),
         # 期間別集計 (ランキング用)
         "periods": period_stats(merged, tag),
+        # 過去の20勝チャレンジ(選手ページにだけ出す)
+        "pastChallenges": past_challenges(player.get("badges")),
         # 達成バッジ(イベントの勝利数など)
         "achievements": update_achievements(
             prev.get("achievements"), list(battles) + merged_recent, tag, now),
@@ -705,6 +707,16 @@ def previous_summary(tag: str, label, groups):
     prev["groups"] = groups or []
     print(f"  {prev['label']}: 取得できなかったので前回の結果を表示します", file=sys.stderr)
     return prev
+
+
+def past_challenges(badges):
+    """プレイヤーのバッジから、過去の20勝チャレンジ(Crl20Wins2025 など)の年を拾う。"""
+    years = []
+    for b in badges or []:
+        m = re.fullmatch(r"Crl20Wins(\d{4})", str(b.get("name", "")))
+        if m and (b.get("progress") is None or b.get("progress", 0) >= 20):
+            years.append(int(m.group(1)))
+    return [{"year": y, "label": "20勝達成"} for y in sorted(set(years), reverse=True)]
 
 
 def event_wins(battles, tag: str, event_tag: str) -> int:
@@ -773,7 +785,15 @@ def read_players():
             if g and g not in groups:
                 groups.append(g)
 
-        entries.append((tag, item.get("name") or None, groups))
+        # 手で付ける特別な称号。文字列か {"label": ..., "replaces": ...} で書ける
+        titles = []
+        for t in item.get("titles") or []:
+            if isinstance(t, str) and t.strip():
+                titles.append({"label": t.strip()})
+            elif isinstance(t, dict) and str(t.get("label", "")).strip():
+                titles.append({k: v for k, v in t.items() if k in ("label", "sub", "replaces")})
+
+        entries.append((tag, item.get("name") or None, groups, titles))
     return entries
 
 
@@ -792,7 +812,7 @@ def main():
 
     summaries = []
     failed = 0
-    for i, (tag, label, groups) in enumerate(entries):
+    for i, (tag, label, groups, titles) in enumerate(entries):
         # 1人目だけフィールドの中身を覗く(2v2リーグの調査用。不要になったら消す)
         try:
             result = collect_player(tag, label, groups, token, probe=(i == 0))
@@ -805,13 +825,14 @@ def main():
             result = previous_summary(tag, label, groups)
             failed += 1
         if result:
+            result["titles"] = titles
             summaries.append(result)
         if i < len(entries) - 1:
             time.sleep(1)
 
     # グループの一覧。players.json に書いた順を保つ
     all_groups = []
-    for _, _, groups in entries:
+    for _, _, groups, _ in entries:
         for g in groups:
             if g not in all_groups:
                 all_groups.append(g)
