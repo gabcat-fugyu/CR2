@@ -32,6 +32,8 @@ window.SparkyView = (function () {
     return `https://link.clashroyale.com/en/?clashroyale://copyDeck?${q}`;
   }
 
+  const STAR = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1.5l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 8.7l7.1-.6z"/></svg>`;
+
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
@@ -104,6 +106,27 @@ window.SparkyView = (function () {
     display: block; font-weight: 800; font-size: 14px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1.5px 0 rgba(4,12,32,0.55);
   }
+  .sv-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .sv-line .sv-name { flex: 0 1 auto; min-width: 0; }
+  /* 20勝チャレンジ達成のバッジ */
+  .sv-ach {
+    position: relative; overflow: hidden; flex-shrink: 0;
+    display: inline-flex; align-items: center; gap: 3px;
+    height: 18px; padding: 0 7px 0 4px; border-radius: 6px;
+    font-family: inherit; font-size: 9.5px; font-weight: 800; line-height: 1;
+    color: #fff4c8; white-space: nowrap; text-shadow: 0 1px 0 rgba(70,0,40,0.65);
+    background: linear-gradient(135deg, #6a1bd1 0%, #c81f6e 55%, #ff8a1f 100%);
+    border: 1.5px solid var(--gold, #ffd23f);
+    box-shadow: 0 0 10px -2px rgba(255,170,60,0.75), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+  .sv-ach svg { width: 12px; height: 12px; fill: var(--gold-lite, #ffe89a); flex-shrink: 0; }
+  .sv-ach::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%;
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.6), transparent);
+    transform: skewX(-20deg); animation: sv-ach-shine 3.4s ease-in-out infinite;
+  }
+  @keyframes sv-ach-shine { 0%, 62% { left: -60%; } 100% { left: 130%; } }
+  @media (prefers-reduced-motion: reduce) { .sv-ach::after { display: none; } }
   .sv-sub { display: block; font-size: 10.5px; color: var(--ink-dim, #a9c0ea); margin-top: 1px; }
   .sv-bar {
     display: block; height: 3px; border-radius: 2px; margin-top: 4px;
@@ -280,7 +303,10 @@ window.SparkyView = (function () {
         <button class="sv-face" data-sv-key="${esc(key)}" aria-expanded="${isOpen}">
           <span class="sv-medal">${p.rank}</span>
           <span class="sv-body">
-            <span class="sv-name">${esc(p.name)}</span>
+            <span class="sv-line">
+              <span class="sv-name">${esc(p.name)}</span>${(p.achievements || []).map(a =>
+                `<span class="sv-ach" title="${esc(a)}">${STAR}${esc(a)}</span>`).join("")}
+            </span>
             <span class="sv-sub">使用率 ${p.usageRate}%${
               p.winRate != null ? ` · 勝率 ${p.winRate}%` : ""}${p.clan ? ` · ${esc(p.clan)}` : ""}</span>
             <span class="sv-bar"><span style="width:${Math.min(100, p.usageRate)}%"></span></span>
