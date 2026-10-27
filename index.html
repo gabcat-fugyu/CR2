@@ -211,7 +211,7 @@
   .ach-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 
   /* ---- 特別な称号(手で付けるもの) ----
-     黒地に、金と電撃の青が回り続ける縁。文字は金のグラデーション */
+     闇色の地に、銀と紫の光が回り続ける縁。紫の電撃をまとう */
   @property --leg-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
   .legend {
     position: relative; flex-shrink: 0;
@@ -220,20 +220,20 @@
     font-family: 'Mochiy Pop One', sans-serif; font-size: 10px; line-height: 1; white-space: nowrap;
     border: 2px solid transparent;
     background:
-      linear-gradient(180deg, #1b1240, #07061a) padding-box,
-      conic-gradient(from var(--leg-a), #ffe89a, #ffb800, #43e4ff, #ffffff, #ffb800, #7a5cff, #ffe89a) border-box;
-    box-shadow: 0 0 12px -1px rgba(67,228,255,0.55), 0 0 18px -6px rgba(255,200,60,0.9);
+      radial-gradient(120% 140% at 50% 0%, #3a1470 0%, #1a0838 55%, #0b0320 100%) padding-box,
+      conic-gradient(from var(--leg-a), #f7f3ff, #8f86ad, #c77dff, #ffffff, #e8c98a, #6f6593, #e2b8ff, #f7f3ff) border-box;
+    box-shadow: 0 0 10px -1px rgba(180,77,255,0.85), 0 0 22px -8px rgba(214,150,255,0.9);
     animation: leg-spin 3.5s linear infinite;
   }
   .legend b {
     font-weight: normal;
-    background: linear-gradient(180deg, #fffbe6 0%, #ffe07a 45%, #ffb300 55%, #fff1b8 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #eee4ff 40%, #b59ae0 58%, #f6efff 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 1px 0 rgba(0,0,0,0.6));
   }
   .legend svg {
-    width: 13px; height: 13px; flex-shrink: 0; fill: #8ff3ff;
-    filter: drop-shadow(0 0 3px #43e4ff) drop-shadow(0 0 6px rgba(67,228,255,0.6));
+    width: 13px; height: 13px; flex-shrink: 0; fill: #e2b8ff;
+    filter: drop-shadow(0 0 3px #b44dff) drop-shadow(0 0 6px rgba(180,77,255,0.7));
     animation: leg-zap 2.2s steps(1) infinite;
   }
   .legend .legend-sub { display: none; }
@@ -242,7 +242,7 @@
   @keyframes leg-zap {
     0%, 70%, 78%, 100% { opacity: 1; }
     72% { opacity: 0.35; }
-    75% { opacity: 1; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px #43e4ff); }
+    75% { opacity: 1; filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px #b44dff); }
   }
   @media (prefers-reduced-motion: reduce) { .legend, .legend svg { animation: none; } }
 
@@ -254,10 +254,20 @@
   .legend.big svg { width: 24px; height: 24px; }
   .legend.big .legend-text { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
   .legend.big .legend-sub {
-    display: block; font-family: inherit; font-size: 8.5px; letter-spacing: 0.22em; color: #8ff3ff;
-    text-shadow: 0 0 6px rgba(67,228,255,0.8);
+    display: block; font-family: inherit; font-size: 8.5px; letter-spacing: 0.22em; color: #e2b8ff;
+    text-shadow: 0 0 6px rgba(180,77,255,0.9);
   }
   .legend-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  /* 画像で用意した称号(選手ページ)。紫の光がゆっくり脈打つ */
+  .legend-img {
+    display: block; width: min(100%, 360px); height: auto; margin: -2px auto -4px;
+    animation: leg-glow 2.8s ease-in-out infinite;
+  }
+  @keyframes leg-glow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(180,77,255,0.45)); }
+    50%      { filter: drop-shadow(0 0 16px rgba(200,110,255,0.95)); }
+  }
+  @media (prefers-reduced-motion: reduce) { .legend-img { animation: none; } }
 
   /* 過去の20勝チャレンジ。選手ページだけに出す控えめな記章 */
   .past-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
@@ -759,8 +769,9 @@ const ZAP_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 1 3
 
 // 手で付けた特別な称号(players.json の titles)
 function legendBadges(p, big) {
-  return (p.titles || []).map(t =>
-    `<span class="legend${big ? " big" : ""}" title="${esc(t.label)}">${ZAP_ICON}<span class="legend-text">${
+  return (p.titles || []).map(t => big && t.image
+    ? `<img class="legend-img" src="${esc(t.image)}" alt="${esc(t.label)}" title="${esc(t.label)}">`
+    : `<span class="legend${big ? " big" : ""}" title="${esc(t.label)}">${ZAP_ICON}<span class="legend-text">${
       t.sub ? `<span class="legend-sub">${esc(t.sub)}</span>` : ""}<b>${esc(t.label)}</b></span></span>`
   ).join("");
 }

@@ -791,7 +791,7 @@ def read_players():
             if isinstance(t, str) and t.strip():
                 titles.append({"label": t.strip()})
             elif isinstance(t, dict) and str(t.get("label", "")).strip():
-                titles.append({k: v for k, v in t.items() if k in ("label", "sub", "replaces")})
+                titles.append({k: v for k, v in t.items() if k in ("label", "sub", "replaces", "image")})
 
         entries.append((tag, item.get("name") or None, groups, titles))
     return entries
