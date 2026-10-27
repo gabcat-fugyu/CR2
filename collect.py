@@ -680,6 +680,11 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
     save_json(player_dir / "history.json", merged)
     save_json(player_dir / "trophies.json", trophies)
     save_json(player_dir / "player.json", summary)
+    # プレイヤーのバッジ(大会やチャレンジの実績)。称号の判定に使う
+    save_json(player_dir / "badges.json", [
+        {k: b.get(k) for k in ("name", "level", "maxLevel", "progress", "target")}
+        for b in player.get("badges") or []
+    ])
 
     rating_text = summary["rating"] if summary["rating"] is not None else "レート無し"
     trimmed = f" / 古い試合を{dropped}件整理" if dropped else ""
