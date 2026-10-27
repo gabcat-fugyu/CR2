@@ -49,13 +49,18 @@ SEASON_RESET_HOUR = int(os.environ.get("SEASON_RESET_HOUR", "18"))
 RESET_LEAGUE = 1  # リセット後のリーグ = マスターI
 
 # ---- 達成バッジ ----
-# イベント(チャレンジ)で目標の勝利数に届いた人に、順位表でバッジを付ける。
-# eventTag は対戦ログに入っているイベントの識別子。
-# 新しいイベントでも出したくなったら、ここに1行足す。
+# チャレンジで目標の勝利数に届いた人に、順位表でバッジを付ける。
+# 判定は次のどちらかで行う(早く分かる方で付く)。
+#   eventTag + wins : 対戦ログのイベント識別子と、その勝利数
+#   badge           : クラロワのプロフィールに付くバッジ名
+# year を書いておくと、選手ページの「過去の20勝」からその年を外す(二重に出さない)。
+# aliases は昔使っていた id。保存済みの達成を引き継ぐ。
+# 新しいチャレンジでも出したくなったら、ここに1行足す。
 # 一度達成した人は、その試合が直近のログから消えても達成のまま残る。
 ACHIEVEMENTS = [
-    # 2026年10月 ハロウィンイベント(Shocktober)のチャレンジ
-    {"id": "shocktober-20", "label": "20勝達成", "eventTag": "#2CJUG2VL", "wins": 20},
+    # CRL 20勝チャレンジ 2026
+    {"id": "crl20-2026", "label": "20勝達成", "eventTag": "#2CJUG2VL", "wins": 20,
+     "badge": "Crl20Wins2026", "year": 2026, "aliases": ["shocktober-20"]},
 ]
 
 ROOT = Path(__file__).parent
@@ -673,7 +678,8 @@ def collect_player(tag: str, label, groups, token: str, probe: bool = False):
         "pastChallenges": past_challenges(player.get("badges")),
         # 達成バッジ(イベントの勝利数など)
         "achievements": update_achievements(
-            prev.get("achievements"), list(battles) + merged_recent, tag, now),
+            prev.get("achievements"), list(battles) + merged_recent, tag, now,
+            player.get("badges")),
     }
 
     # 画面用: 直近だけフル装備(デッキやスターレベルも入る)
@@ -710,12 +716,15 @@ def previous_summary(tag: str, label, groups):
 
 
 def past_challenges(badges):
-    """プレイヤーのバッジから、過去の20勝チャレンジ(Crl20Wins2025 など)の年を拾う。"""
+    """プレイヤーのバッジから、過去の20勝チャレンジ(Crl20Wins2025 など)の年を拾う。
+    今やっている分(ACHIEVEMENTS に year があるもの)は別に出すので除く。"""
+    current = {a.get("year") for a in ACHIEVEMENTS if a.get("year")}
     years = []
     for b in badges or []:
         m = re.fullmatch(r"Crl20Wins(\d{4})", str(b.get("name", "")))
         if m and (b.get("progress") is None or b.get("progress", 0) >= 20):
-            years.append(int(m.group(1)))
+            if int(m.group(1)) not in current:
+                years.append(int(m.group(1)))
     return [{"year": y, "label": "20勝達成"} for y in sorted(set(years), reverse=True)]
 
 
@@ -740,13 +749,20 @@ def event_wins(battles, tag: str, event_tag: str) -> int:
     return best
 
 
-def update_achievements(prev_list, battles, tag: str, now):
+def update_achievements(prev_list, battles, tag: str, now, badges=None):
     """前回までの達成に、今回新しく達成したものを足して返す。"""
     have = {a.get("id"): a for a in (prev_list or []) if isinstance(a, dict)}
+    badge_names = {str(b.get("name")) for b in badges or []}
     for a in ACHIEVEMENTS:
+        # 昔の id で保存されていたら引き継ぐ
+        for old in a.get("aliases") or []:
+            if old in have:
+                have[a["id"]] = {**have.pop(old), "id": a["id"], "label": a["label"]}
         if a["id"] in have:
             continue
-        if event_wins(battles, tag, a["eventTag"]) >= a["wins"]:
+        by_event = bool(a.get("eventTag")) and event_wins(battles, tag, a["eventTag"]) >= a.get("wins", 20)
+        by_badge = bool(a.get("badge")) and a["badge"] in badge_names
+        if by_event or by_badge:
             have[a["id"]] = {"id": a["id"], "label": a["label"],
                              "at": now.isoformat(timespec="seconds")}
             print(f"    🏆 {a['label']} を達成")
