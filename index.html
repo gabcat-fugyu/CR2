@@ -179,8 +179,15 @@
     text-shadow: 0 1.5px 0 rgba(4,12,32,0.55);
   }
   .plate-sub { display: block; font-size: 10.5px; color: var(--ink-dim); margin-top: 1px; }
-  .plate-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-  .plate-line .plate-name { flex: 0 1 auto; min-width: 0; }
+  /* 順位表の称号。名前の上に1つだけ載せ、他にもあれば +N で示す(名前を削らない) */
+  .plate-titles { display: flex; align-items: center; gap: 4px; margin: 0 0 3px; min-width: 0; }
+  .plate-titles .ach, .plate-titles .legend { height: 16px; font-size: 9px; }
+  .plate-titles .ach svg, .plate-titles .legend svg { width: 11px; height: 11px; }
+  .t-more {
+    flex-shrink: 0; font-size: 9px; font-weight: 800; line-height: 1;
+    padding: 3px 5px; border-radius: 5px;
+    color: var(--ink-dim); background: rgba(6,16,40,0.55); border: 1px solid rgba(120,170,240,0.35);
+  }
 
   /* ---- 達成バッジ ---- */
   .ach {
@@ -795,12 +802,24 @@ function pastChallenges(p) {
     `<span class="past">${ACH_ICON}20勝達成<i>(${esc(y)})</i></span>`).join("")}</div>`;
 }
 
-function achBadges(p, big) {
+function achList(p, big) {
   // 特別な称号が代わりになっているものは出さない
   const replaced = new Set((p.titles || []).map(t => t.replaces).filter(Boolean));
   return (p.achievements || []).filter(a => !replaced.has(a.id) && isCurrent(a)).map(a =>
-    `<span class="ach${big ? " big" : ""}" title="${esc(a.label)}">${ACH_ICON}<b>${esc(a.label)}</b></span>`
-  ).join("");
+    `<span class="ach${big ? " big" : ""}" title="${esc(a.label)}">${ACH_ICON}<b>${esc(a.label)}</b></span>`);
+}
+const achBadges = (p, big) => achList(p, big).join("");
+
+// 順位表に載せる称号。特別な称号 → 達成バッジ の順で一番上の1つだけ出し、
+// 残りの数を +N で添える。全部は選手ページで見られる
+function boardTitles(p) {
+  const all = [
+    ...(p.titles || []).filter(isCurrent).map(t => legendBadges({ titles: [t] })),
+    ...achList(p),
+  ];
+  if (!all.length) return "";
+  return `<span class="plate-titles">${all[0]}${
+    all.length > 1 ? `<span class="t-more">+${all.length - 1}</span>` : ""}</span>`;
 }
 
 // ---- デッキコピー ----
@@ -1020,9 +1039,8 @@ function drawBoard() {
       <span class="medal display">${i + 1}</span>
       ${shieldHtml(p.leagueNumber, "shield")}
       <span class="plate-body">
-        <span class="plate-line">
-          <span class="plate-name">${esc(p.label || p.name)}</span>${legendBadges(p)}${achBadges(p)}
-        </span>
+        ${boardTitles(p)}
+        <span class="plate-name">${esc(p.label || p.name)}</span>
         <span class="plate-sub">${esc(m.sub(p))}${
           groupFilter === "ALL" && groupsOf(p).length
             ? ` · ${esc(groupsOf(p).join("/"))}` : ""}</span>
