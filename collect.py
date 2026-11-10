@@ -751,7 +751,9 @@ def event_wins(battles, tag: str, event_tag: str) -> int:
 def update_achievements(prev_list, battles, tag: str, now, badges=None):
     """前回までの達成に、今回新しく達成したものを足して返す。"""
     have = {a.get("id"): a for a in (prev_list or []) if isinstance(a, dict)}
-    badge_names = {str(b.get("name")) for b in badges or []}
+    # バッジは17〜19勝でももらえる(progress が勝利数)。20勝したかは progress で見る
+    badge_wins = {str(b.get("name")): (b.get("progress") if isinstance(b.get("progress"), int) else None)
+                  for b in badges or []}
     for a in ACHIEVEMENTS:
         # 昔の id で保存されていたら引き継ぐ
         for old in a.get("aliases") or []:
@@ -759,10 +761,17 @@ def update_achievements(prev_list, battles, tag: str, now, badges=None):
                 have[a["id"]] = {**have.pop(old), "id": a["id"], "label": a["label"]}
         if a["id"] in have and a.get("year"):
             have[a["id"]]["year"] = a["year"]
+        need = a.get("wins", 20)
+        badge = badge_wins.get(a.get("badge")) if a.get("badge") in badge_wins else "none"
+        # バッジが出ていれば、その勝利数が最終結果。足りなければ(前に付けていても)外す
+        if isinstance(badge, int) and badge < need:
+            if have.pop(a["id"], None):
+                print(f"    🏆 {a['label']} を外しました(バッジは{badge}勝)")
+            continue
         if a["id"] in have:
             continue
-        by_event = bool(a.get("eventTag")) and event_wins(battles, tag, a["eventTag"]) >= a.get("wins", 20)
-        by_badge = bool(a.get("badge")) and a["badge"] in badge_names
+        by_event = bool(a.get("eventTag")) and event_wins(battles, tag, a["eventTag"]) >= need
+        by_badge = badge != "none" and (badge is None or badge >= need)
         if by_event or by_badge:
             have[a["id"]] = {"id": a["id"], "label": a["label"], "year": a.get("year"),
                              "at": now.isoformat(timespec="seconds")}
